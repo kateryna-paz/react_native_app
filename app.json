@@ -20,8 +20,30 @@
         "backgroundColor": "#ffffff"
       }
     },
+    "scheme": "solarpanelsapp",
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/SofiaSans-Regular.ttf",
+            "./assets/fonts/Kurale-Regular.ttf",
+            "./assets/fonts/RobotoSlab-Regular.ttf",
+            "./assets/fonts/Marmelad-Regular.ttf",
+            "./assets/fonts/Rubik-Regular.ttf"
+          ]
+        }
+      ]
+    ]
   }
 }
