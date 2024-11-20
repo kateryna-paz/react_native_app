@@ -1,7 +1,18 @@
-import { Link, router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Link, router, useNavigation } from "expo-router";
+import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import {
+  Alert,
+  Button,
+  Image,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useState } from "react";
 
-export default EnergyDistibutionScreen = () => {
+export default function EnergyDistibutionScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Energy Distribution</Text>
@@ -15,7 +26,7 @@ export default EnergyDistibutionScreen = () => {
       </Pressable>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   link: {

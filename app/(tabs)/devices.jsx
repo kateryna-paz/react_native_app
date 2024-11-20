@@ -1,7 +1,7 @@
 import { Link, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-export default EnergyDestibutionScreen = () => {
+export default function DevicesScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Devices</Text>
@@ -15,7 +15,7 @@ export default EnergyDestibutionScreen = () => {
       </Pressable>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   link: {

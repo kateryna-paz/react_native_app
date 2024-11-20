@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import MyTabBar from "../../components/NavBar";
+import MyTabBar from "../../components/TabBar";
 
 export default () => {
   return (

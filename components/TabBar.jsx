@@ -1,19 +1,47 @@
-import * as React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  Keyboard,
+  Animated as RNAnimated,
+} from "react-native";
 import TabBarButton from "./TabBarButton";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { usePathname } from "expo-router";
 
 export default function MyTabBar({ state, descriptors, navigation }) {
-  const [dimensions, setDimensions] = React.useState({
+  const currentPath = usePathname();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  const [dimensions, setDimensions] = useState({
     height: 20,
     width: 62,
   });
 
   const buttonWidth = dimensions.width / state.routes.length;
+
+  const tabPositionX = useSharedValue(6);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tabPositionX.value }],
+  }));
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const onTabbarLayout = (e) => {
     setDimensions({
@@ -22,12 +50,10 @@ export default function MyTabBar({ state, descriptors, navigation }) {
     });
   };
 
-  const tabPositionX = useSharedValue(10);
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: tabPositionX.value }],
-    };
-  });
+  if (isKeyboardVisible || currentPath === "/profile/map") {
+    return null;
+  }
+
   return (
     <View onLayout={onTabbarLayout} style={styles.tabbar}>
       <Animated.View
@@ -85,7 +111,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
             routeName={route.name}
             color={isFocused ? "white" : "grey"}
             label={label}
-          ></TabBarButton>
+          />
         );
       })}
     </View>
