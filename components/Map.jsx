@@ -1,57 +1,100 @@
 import { Link, router, useNavigation } from "expo-router";
-import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Alert, SafeAreaView, StyleSheet } from "react-native";
-import { useState } from "react";
 import { FAB } from "react-native-paper";
+import { useDispatch, useSelector } from "react-redux";
+import { setCoordinatesAndFetchAddress } from "../store/slices/locationSlice";
+import { setMapMarkerCoordinates } from "../store/slices/mapSlice";
+import { useState, useEffect } from "react";
 
 const INITIAL_REGION = {
-  latitude: 48.5336,
-  longitude: 32.6369,
-  latitudeDelta: 25,
-  longitudeDelta: 25,
+  latitude: 49.4501,
+  longitude: 31.5234,
+  latitudeDelta: 10,
+  longitudeDelta: 10,
 };
 
 export default function Map() {
-  const onRegionChange = (region) => {
-    setDraggableMarkerCoords({
-      latitude: region.latitude,
-      longitude: region.longitude,
-    });
+  const dispatch = useDispatch();
+  const { markerCoords } = useSelector((state) => state.map);
+
+  const [currentCoords, setCurrentCoords] = useState(
+    markerCoords || INITIAL_REGION
+  );
+
+  const onRegionChangeComplete = (region) => {
+    setCurrentCoords(region);
   };
 
-  const saveLocation = () => {
-    setUserLocation(draggableMarkerCoords);
-    Alert.alert("Ваше місцезнаходження", JSON.stringify(userLocation), [
-      {
-        text: "Відмінити",
-        onPress: () => console.log("Cancel Pressed"),
-        style: "cancel",
-      },
-      { text: "ОК", onPress: () => router.push("/profile") },
-    ]);
+  const saveLocation = async () => {
+    try {
+      await dispatch(setMapMarkerCoordinates(currentCoords));
+      const result = await dispatch(
+        setCoordinatesAndFetchAddress(currentCoords)
+      );
+
+      const { latitude, longitude, region, city } = result.payload;
+
+      Alert.alert(
+        "Ваше місцезнаходження",
+        `Широта: ${latitude}, \nДовгота: ${longitude}, \nВаша область: ${region}, ${city}`,
+        [
+          { text: "Відмінити", style: "cancel" },
+          { text: "ОК", onPress: () => router.back() },
+        ]
+      );
+    } catch (error) {
+      console.error("Помилка:", error);
+      Alert.alert("Помилка", "Не вдалося зберегти місцезнаходження.");
+    }
   };
 
-  const [draggableMarkerCoords, setDraggableMarkerCoords] = useState({
-    latitude: 48.3367,
-    longitude: 32.0194,
-  });
-  const [userLocation, setUserLocation] = useState(draggableMarkerCoords);
+  useEffect(() => {
+    if (markerCoords) {
+      setCurrentCoords(markerCoords);
+    } else {
+      setCurrentCoords(INITIAL_REGION);
+    }
+  }, []);
+
+  if (!currentCoords) {
+    return;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <MapView
         style={styles.map}
-        onRegionChange={onRegionChange}
+        onRegionChangeComplete={onRegionChangeComplete}
         initialRegion={INITIAL_REGION}
         provider={PROVIDER_GOOGLE}
-        showsMyLocationButton
       >
-        <Marker
-          coordinate={draggableMarkerCoords}
-          title="Your Location"
-          style={styles.marker}
-          onDragEnd={(e) => setDraggableMarkerCoords(e.nativeEvent.coordinate)}
-        ></Marker>
+        {currentCoords && (
+          <Marker
+            coordinate={
+              {
+                latitude: currentCoords.latitude,
+                longitude: currentCoords.longitude,
+              } || INITIAL_REGION
+            }
+            title="Your Location"
+            style={styles.marker}
+            draggable
+            onDragEnd={(e) =>
+              setCurrentCoords({
+                latitude: e.nativeEvent.coordinate.latitude,
+                longitude: e.nativeEvent.coordinate.longitude,
+              })
+            }
+          />
+        )}
+
+        <Circle
+          center={{ latitude: 49.4501, longitude: 31.5234 }}
+          radius={2}
+          strokeColor="rgba(0, 0, 255, 0.1)"
+          fillColor="rgba(0, 0, 255, 0)"
+        />
       </MapView>
       <FAB
         onPress={() => {
@@ -97,7 +140,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   marker: {
-    width: 45,
-    height: 45,
+    width: 50,
+    height: 50,
   },
 });

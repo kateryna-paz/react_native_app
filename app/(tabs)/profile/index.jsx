@@ -1,4 +1,3 @@
-import { Link, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import UserInfoSection from "../../../components/profile/UserInfoSection";
 import LocationSection from "../../../components/profile/LocationSection";

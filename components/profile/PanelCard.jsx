@@ -1,18 +1,41 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text } from "react-native";
 import { TextInput } from "react-native-paper";
+import SelectList from "../UI/SelectList";
+import { fetchPanelTypes } from "../../store/slices/typesSlice";
+import { useSelector, useDispatch } from "react-redux";
+
+const types = [
+  { id: 1, title: "Monocrystals" },
+  { id: 2, title: "Polycrystals" },
+  { id: 3, title: "Multicrystals" },
+];
 
 export default function PanelCard() {
   const [square, setSquare] = React.useState(0);
   const [number, setNumber] = React.useState(0);
+  const dispatch = useDispatch();
+  const { panelTypes, isLoaded, error } = useSelector(
+    (state) => state.panelTypes
+  );
+
+  useEffect(() => {
+    dispatch(fetchPanelTypes());
+  }, [dispatch]);
   return (
-    <View>
+    <View
+      style={{
+        flexDirection: "column",
+        gap: 15,
+        alignItems: "center",
+        marginHorizontal: 20,
+      }}
+    >
       <View
         style={{
           flexDirection: "row",
           gap: 15,
           alignItems: "center",
-          marginHorizontal: 20,
         }}
       >
         <TextInput
@@ -42,6 +65,12 @@ export default function PanelCard() {
           keyboardType="numeric"
         />
       </View>
+      <SelectList
+        style={{ width: "100%" }}
+        title="Оберіть тип панелей"
+        items={panelTypes || types}
+        icon="atom"
+      />
     </View>
   );
 }

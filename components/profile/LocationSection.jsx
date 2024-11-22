@@ -3,26 +3,25 @@ import { View, Text, Alert, StyleSheet } from "react-native";
 import { ActivityIndicator, Button } from "react-native-paper";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
-import useLocation from "../../hooks/useLocation";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchLocation } from "../../store/slices/locationSlice";
 
 export default function LocationSection() {
-  const { location, error, isLoading, fetchLocation } = useLocation();
-
-  const { latitude, longitude, country, region, city, street, house } =
-    location;
+  const dispatch = useDispatch();
+  const { location, isLoading, error } = useSelector((state) => state.location);
 
   const handleFetchLocation = async () => {
-    await fetchLocation();
+    await dispatch(fetchLocation()).unwrap();
+    const { latitude, longitude, region, city } = location;
+    const err = error;
 
-    console.log(latitude, longitude);
-
-    if (error) {
-      Alert.alert("Помилка", error);
-    } else if (latitude && longitude) {
+    if (latitude && longitude) {
       Alert.alert(
         "Ваше місцезнаходження",
-        `Широта: ${latitude}, Довгота: ${longitude}, Ваша адреса: ${country}, ${region}, ${city}, ${street}, ${house}`
+        `Широта: ${latitude}, \nДовгота: ${longitude}, \nВаша область:  ${region}, ${city}`
       );
+    } else if (err) {
+      Alert.alert("Помилка", err);
     }
   };
   return (
