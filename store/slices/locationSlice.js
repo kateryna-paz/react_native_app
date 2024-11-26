@@ -5,16 +5,6 @@ export const fetchLocation = createAsyncThunk(
   "location/fetchLocation",
   async (_, { rejectWithValue }) => {
     try {
-      const enabled = await Location.hasServicesEnabledAsync();
-      if (!enabled) {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          return rejectWithValue(
-            "Геолокація вимкнена. Увімкніть її у налаштуваннях."
-          );
-        }
-      }
-
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         return rejectWithValue("Дозвіл на використання геолокації не надано.");
@@ -32,15 +22,28 @@ export const fetchLocation = createAsyncThunk(
       }
 
       const { region, city } = address[0];
-
-      return {
-        latitude,
-        longitude,
-        city,
-        region,
-      };
+      return { latitude, longitude, city, region };
     } catch (error) {
       return rejectWithValue("Сталася помилка при отриманні місцезнаходження.");
+    }
+  }
+);
+
+export const setPermission = createAsyncThunk(
+  "location/setPermission",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status === "granted") {
+        return true;
+      } else {
+        return rejectWithValue("Дозвіл на використання геолокації не надано.");
+      }
+    } catch (error) {
+      return rejectWithValue(
+        "Сталася помилка при отриманні дозволу на використання геолокації."
+      );
     }
   }
 );
@@ -50,10 +53,6 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
   async ({ latitude, longitude }, { rejectWithValue }) => {
     try {
       console.log(latitude, longitude);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        rejectWithValue("Доступ до локації не надано");
-      }
 
       const address = await Location.reverseGeocodeAsync({
         latitude,
@@ -89,7 +88,7 @@ const locationSlice = createSlice({
       region: null,
       city: null,
     },
-
+    permission: false,
     isLoading: false,
     error: null,
   },
@@ -119,6 +118,19 @@ const locationSlice = createSlice({
         state.error = null;
       })
       .addCase(setCoordinatesAndFetchAddress.rejected, (state, action) => {
+        state.error = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(setPermission.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(setPermission.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.permission = { ...action.payload };
+        state.error = null;
+      })
+      .addCase(setPermission.rejected, (state, action) => {
         state.error = action.payload;
         state.isLoading = false;
       });

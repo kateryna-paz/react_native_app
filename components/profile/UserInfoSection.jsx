@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "bottom",
-    marginBottom: 5,
   },
   info: {
     marginLeft: 20,

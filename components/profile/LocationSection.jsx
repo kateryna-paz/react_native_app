@@ -1,29 +1,38 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, Alert, StyleSheet } from "react-native";
 import { ActivityIndicator, Button } from "react-native-paper";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchLocation } from "../../store/slices/locationSlice";
+import { fetchLocation, setPermission } from "../../store/slices/locationSlice";
 
 export default function LocationSection() {
   const dispatch = useDispatch();
-  const { location, isLoading, error } = useSelector((state) => state.location);
+  const { location, permission, isLoading, error } = useSelector(
+    (state) => state.location
+  );
 
   const handleFetchLocation = async () => {
-    await dispatch(fetchLocation()).unwrap();
-    const { latitude, longitude, region, city } = location;
-    const err = error;
-
-    if (latitude && longitude) {
+    try {
+      const result = await dispatch(fetchLocation()).unwrap();
       Alert.alert(
         "Ваше місцезнаходження",
-        `Широта: ${latitude}, \nДовгота: ${longitude}, \nВаша область:  ${region}, ${city}`
+        `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.region}, ${result.city}`
       );
-    } else if (err) {
+    } catch (err) {
       Alert.alert("Помилка", err);
     }
   };
+
+  const handleUseMap = async () => {
+    router.push("/profile/map");
+  };
+
+  useEffect(() => {
+    if (!permission) {
+      dispatch(setPermission());
+    }
+  }, [dispatch]);
   return (
     <View style={styles.container}>
       <Text style={styles.title}> Місце розташування панелей</Text>
@@ -46,9 +55,7 @@ export default function LocationSection() {
       </Button>
       <Button
         mode="contained"
-        onPress={() => {
-          router.push("/profile/map");
-        }}
+        onPress={handleUseMap}
         contentStyle={styles.buttonContent}
         buttonColor={"#ddA500"}
         textColor={"white"}
@@ -63,7 +70,8 @@ export default function LocationSection() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    paddingHorizontal: 10,
+    marginVertical: 16,
   },
   title: {
     fontFamily: "Marmelad",

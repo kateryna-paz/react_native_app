@@ -2,13 +2,16 @@ import { Stack } from "expo-router";
 import { Provider } from "react-redux";
 import store from "../store/store";
 import { FontProvider, useFontsLoaded } from "../context/fontsContext";
+import { PaperProvider } from "react-native-paper";
 
 export default function Layout() {
   return (
     <Provider store={store}>
-      <FontProvider>
-        <MainLayout />
-      </FontProvider>
+      <PaperProvider>
+        <FontProvider>
+          <MainLayout />
+        </FontProvider>
+      </PaperProvider>
     </Provider>
   );
 }

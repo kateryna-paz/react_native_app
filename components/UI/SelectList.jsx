@@ -1,22 +1,32 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { List, RadioButton } from "react-native-paper";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-export default function SelectList({ title, items, icon }) {
+export default function SelectList({ title, items, selectedTypeId, onSelect }) {
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  useEffect(() => {
+    if (Array.isArray(items) && selectedTypeId) {
+      const initialItem = items.find((item) => item.id === selectedTypeId);
+      if (initialItem) {
+        setSelectedItem(initialItem);
+      }
+    }
+  }, [selectedTypeId, items]);
+
   return (
     <SelectDropdown
       data={items}
-      style={styles.selectList}
-      onSelect={(selectedItem) => {
-        console.log(selectedItem, selectedItem.id, selectedItem.type);
+      onSelect={(item) => {
+        setSelectedItem(item);
+        if (onSelect) onSelect(item.id);
       }}
-      renderButton={(selectedItem, isOpened) => {
+      renderButton={(currentSelectedItem, isOpened) => {
         return (
           <View style={styles.dropdownButtonStyle}>
             <Text style={styles.dropdownButtonTxtStyle}>
-              {(selectedItem && selectedItem.type) || title}
+              {currentSelectedItem?.type || selectedItem?.type || title}
             </Text>
             <Icon
               name={isOpened ? "chevron-up" : "chevron-down"}
@@ -25,12 +35,14 @@ export default function SelectList({ title, items, icon }) {
           </View>
         );
       }}
-      renderItem={(item, isSelected) => {
+      renderItem={(item) => {
         return (
           <View
             style={{
               ...styles.dropdownItemStyle,
-              ...(isSelected && { backgroundColor: "#D2D9DF" }),
+              ...(item.id === selectedItem?.id && {
+                backgroundColor: "#7E44C9",
+              }),
             }}
           >
             <Text style={styles.dropdownItemTxtStyle}>{item.type}</Text>
@@ -46,8 +58,9 @@ export default function SelectList({ title, items, icon }) {
 const styles = StyleSheet.create({
   dropdownButtonStyle: {
     width: "auto",
-    height: 50,
-    backgroundColor: "#E9ECEF",
+    height: 44,
+    backgroundColor: "#672ab7",
+
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
@@ -56,15 +69,16 @@ const styles = StyleSheet.create({
   },
   dropdownButtonTxtStyle: {
     flex: 1,
-    color: "#151E26",
+    color: "white",
     fontFamily: "Kurale",
-    fontSize: 18,
+    fontSize: 16,
   },
   dropdownButtonArrowStyle: {
-    fontSize: 28,
+    color: "white",
+    fontSize: 26,
   },
   dropdownMenuStyle: {
-    backgroundColor: "#E9ECEF",
+    backgroundColor: "#672ab7",
     borderRadius: 8,
   },
   dropdownItemStyle: {
@@ -77,12 +91,8 @@ const styles = StyleSheet.create({
   },
   dropdownItemTxtStyle: {
     flex: 1,
-    color: "#151E26",
+    color: "white",
     fontFamily: "Kurale",
-    fontSize: 18,
-  },
-  dropdownItemIconStyle: {
-    fontSize: 28,
-    marginRight: 8,
+    fontSize: 16,
   },
 });

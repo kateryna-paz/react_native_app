@@ -3,8 +3,8 @@ import axiosInstance from "../../services/axiosConfig";
 
 const initialState = {
   panelTypes: null,
-  isLoaded: false,
-  error: null,
+  isTypesLoaded: false,
+  errorTypes: null,
 };
 
 export const fetchPanelTypes = createAsyncThunk(
@@ -12,10 +12,10 @@ export const fetchPanelTypes = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get("/paneltypes");
-      
+
       return response.data;
     } catch (error) {
-      return rejectWithValue("Помилка при отриманні даних");
+      return rejectWithValue("Помилка при отриманні даних" + error);
     }
   }
 );
@@ -27,17 +27,17 @@ const typesSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchPanelTypes.pending, (state) => {
-        state.isLoaded = false;
-        state.error = null;
+        state.isTypesLoaded = false;
+        state.errorTypes = null;
       })
       .addCase(fetchPanelTypes.fulfilled, (state, action) => {
         state.panelTypes = action.payload;
-        state.isLoaded = true;
-        state.error = null;
+        state.isTypesLoaded = true;
+        state.errorTypes = null;
       })
       .addCase(fetchPanelTypes.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoaded = false;
+        state.errorTypes = action.payload;
+        state.isTypesLoaded = false;
       });
   },
 });

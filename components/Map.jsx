@@ -1,7 +1,7 @@
 import { Link, router, useNavigation } from "expo-router";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import { Alert, SafeAreaView, StyleSheet } from "react-native";
-import { FAB } from "react-native-paper";
+import { Alert, SafeAreaView, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, FAB } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { setCoordinatesAndFetchAddress } from "../store/slices/locationSlice";
 import { setMapMarkerCoordinates } from "../store/slices/mapSlice";
@@ -16,7 +16,7 @@ const INITIAL_REGION = {
 
 export default function Map() {
   const dispatch = useDispatch();
-  const { markerCoords } = useSelector((state) => state.map);
+  const { markerCoords, isLoading, error } = useSelector((state) => state.map);
 
   const [currentCoords, setCurrentCoords] = useState(
     markerCoords || INITIAL_REGION
@@ -28,12 +28,12 @@ export default function Map() {
 
   const saveLocation = async () => {
     try {
-      await dispatch(setMapMarkerCoordinates(currentCoords));
+      dispatch(setMapMarkerCoordinates(currentCoords));
       const result = await dispatch(
         setCoordinatesAndFetchAddress(currentCoords)
-      );
+      ).unwrap();
 
-      const { latitude, longitude, region, city } = result.payload;
+      const { latitude, longitude, region, city } = result;
 
       Alert.alert(
         "Ваше місцезнаходження",
@@ -57,8 +57,31 @@ export default function Map() {
     }
   }, []);
 
-  if (!currentCoords) {
-    return;
+  if (error) {
+    return (
+      <Text
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          color: "red",
+          fontSize: 20,
+          fontFamily: "Marmelad",
+        }}
+      >
+        {error}
+      </Text>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#51bbfe"
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      />
+    );
   }
 
   return (
