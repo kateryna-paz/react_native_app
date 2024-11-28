@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Keyboard,
-  Animated as RNAnimated,
-} from "react-native";
+import { View, StyleSheet, Keyboard } from "react-native";
 import TabBarButton from "./TabBarButton";
 import Animated, {
   useAnimatedStyle,
@@ -29,6 +24,13 @@ export default function MyTabBar({ state, descriptors, navigation }) {
     transform: [{ translateX: tabPositionX.value }],
   }));
 
+  const pathToIndexMap = {
+    "/home": 0,
+    "/energy_distribution": 1,
+    "/devices": 2,
+    "/profile": 3,
+  };
+
   useEffect(() => {
     const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
       setKeyboardVisible(true);
@@ -42,6 +44,15 @@ export default function MyTabBar({ state, descriptors, navigation }) {
       hideSubscription.remove();
     };
   }, []);
+
+  useEffect(() => {
+    const targetIndex = pathToIndexMap[currentPath];
+    if (targetIndex !== undefined) {
+      tabPositionX.value = withSpring(buttonWidth * targetIndex + 5, {
+        duration: 1700,
+      });
+    }
+  }, [currentPath, buttonWidth]);
 
   const onTabbarLayout = (e) => {
     setDimensions({
@@ -81,18 +92,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
         const isFocused = state.index === index;
 
         const onPress = () => {
-          tabPositionX.value = withSpring(buttonWidth * index + 5, {
-            duration: 1700,
-          });
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
+          navigation.navigate(route.name, route.params);
         };
 
         const onLongPress = () => {

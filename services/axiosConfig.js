@@ -1,13 +1,40 @@
 import axios from "axios";
-
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VkSWQiOiI2NzM2MWUxNGE5ZDk2NTY3MmM2ODBiYjkiLCJpYXQiOjE3MzI1NjQwNjUsImV4cCI6MTczMzE2ODg2NX0.-UMXOcDcJK-6Xl-Oj3PuuXBWUal04ABnLbNrshP0khc";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
 const axiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_BASE_URL + process.env.EXPO_PUBLIC_API_URL,
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
 });
+
+const getAuthToken = async () => {
+  const token = await AsyncStorage.getItem("token");
+  return token ? `Bearer ${token}` : null;
+};
+
+axiosInstance.interceptors.request.use(async (config) => {
+  const token = await getAuthToken();
+  if (token) {
+    config.headers.Authorization = token;
+  }
+  return config;
+});
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      try {
+        await AsyncStorage.removeItem("token");
+        await AsyncStorage.removeItem("refreshToken");
+
+        const navigation = useNavigation();
+        navigation.navigate("/auth/login");
+      } catch (logoutError) {
+        console.error("Error during logout:", logoutError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default axiosInstance;

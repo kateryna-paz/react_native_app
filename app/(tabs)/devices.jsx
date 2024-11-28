@@ -11,7 +11,7 @@ export default function DevicesScreen() {
           router.push("/energy_distribution");
         }}
       >
-        <Text> to index.js </Text>
+        <Text> До сторінки Розподілу</Text>
       </Pressable>
     </View>
   );

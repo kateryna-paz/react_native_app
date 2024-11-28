@@ -47,7 +47,6 @@ export const changePanel = createAsyncThunk(
         number,
         square,
       });
-      console.log(id, typeId, square, number);
       return updatedPanel;
     } catch (error) {
       return rejectWithValue("Помилка при оновленні даних про панель" + error);
@@ -59,13 +58,13 @@ export const addPanel = createAsyncThunk(
   "panels/addPanel",
   async ({ typeId, number, square }, { rejectWithValue }) => {
     try {
-      const newPanel = await axiosInstance.post("/panels", {
+      const newPanelId = await axiosInstance.post("/panels", {
         typeId,
         number,
         square,
       });
 
-      const panel = await axiosInstance.get(`/panels/${newPanel.data}`);
+      const panel = await axiosInstance.get(`/panels/${newPanelId.data}`);
 
       return panel.data;
     } catch (error) {

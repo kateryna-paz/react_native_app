@@ -19,7 +19,7 @@ export default function EnergyDistibutionScreen() {
       <Pressable
         style={styles.link}
         onPress={() => {
-          router.push("/");
+          router.push("/home");
         }}
       >
         <Text> to index.js </Text>
