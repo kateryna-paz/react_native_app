@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text, Alert, StyleSheet } from "react-native";
 import PanelCard from "./PanelCard";
 import { useDispatch, useSelector } from "react-redux";
 import { ActivityIndicator, Button, IconButton } from "react-native-paper";
 import { addPanel, fetchPanels } from "../../store/slices/panelSlice";
 import PanelDialog from "../UI/PanelDialog";
 import { fetchPanelTypes } from "../../store/slices/typesSlice";
+import ErrorText from "../UI/ErrorText";
 
-export default function PanelsInfoSection() {
+export default function PanelsInfoSection({ user }) {
   const dispatch = useDispatch();
   const { panels, isLoaded, error } = useSelector((state) => state.panel);
   const { panelTypes, isTypesLoaded, errorTypes } = useSelector(
@@ -22,7 +23,7 @@ export default function PanelsInfoSection() {
 
   const [openAddDialog, setOpenAddDialog] = useState(false);
 
-  const handleAddPanel = () => {
+  const handleAddPanel = async () => {
     if (panelData.square <= 0 || panelData.number <= 0 || !panelData.typeId) {
       Alert.alert(
         "Помилка створення нової панелі",
@@ -30,7 +31,7 @@ export default function PanelsInfoSection() {
       );
       return;
     }
-    dispatch(addPanel(panelData))
+    await dispatch(addPanel(panelData))
       .unwrap()
       .then(() => Alert.alert("Нова панель успішно додана!"))
       .catch((err) =>
@@ -39,54 +40,30 @@ export default function PanelsInfoSection() {
 
     setPanelData({ square: 0, number: 0, typeId: null });
     setOpenAddDialog(false);
-    refresh();
+    await refresh();
   };
 
   useEffect(() => {
-    dispatch(fetchPanels());
-    dispatch(fetchPanelTypes());
-    if (errorTypes) {
-      console.error("Error fetching panel types:", errorTypes);
+    if (user?.id || error) {
+      dispatch(fetchPanels());
+      dispatch(fetchPanelTypes());
     }
-    if (error) {
-      console.error("Error fetching panels: ", error);
-    }
-  }, [dispatch]);
+  }, [dispatch, user?.id]);
 
-  const refresh = () => {
-    dispatch(fetchPanels());
+  const refresh = async () => {
+    await dispatch(fetchPanels());
   };
 
   const isLoading = !isLoaded || !isTypesLoaded;
 
   return (
-    <View style={{ marginBottom: 16 }}>
-      <Text
-        style={{
-          fontFamily: "Marmelad",
-          fontSize: 24,
-          marginLeft: 20,
-        }}
-      >
-        Сонячні панелі
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Сонячні панелі</Text>
       <View style={{ alignItems: "center" }}>
-        {(errorTypes || error) && (
-          <Text
-            style={{
-              color: "red",
-              textAlign: "center",
-              fontFamily: "Marmelad",
-              fontSize: 16,
-              marginTop: 20,
-            }}
-          >
-            {error || errorTypes}
-          </Text>
-        )}
-        {isLoading && (
+        {(errorTypes || error) && <ErrorText error={errorTypes || error} />}
+        {isLoading && !error && (
           <ActivityIndicator
-            style={{ marginTop: 40 }}
+            style={{ marginTop: 30, marginBottom: 20 }}
             size="large"
             color="#51bbfe"
           />
@@ -98,6 +75,7 @@ export default function PanelsInfoSection() {
               fontFamily: "Marmelad",
               fontSize: 16,
               marginTop: 20,
+              marginBottom: 10,
             }}
           >
             Наразі тут немає жодної інформації про ваші панелі. Додайте її
@@ -117,17 +95,19 @@ export default function PanelsInfoSection() {
               refresh={refresh}
             />
           ))}
-        <IconButton
-          icon="plus"
-          mode="contained"
-          containerColor="#51bbfe"
-          iconColor="white"
-          style={{ marginTop: 10 }}
-          size={30}
-          onPress={() => {
-            setOpenAddDialog(true);
-          }}
-        />
+        {panels && !errorTypes && isTypesLoaded && (
+          <IconButton
+            icon="plus"
+            mode="contained"
+            containerColor="#51bbfe"
+            iconColor="white"
+            style={{ marginTop: 10 }}
+            size={30}
+            onPress={() => {
+              setOpenAddDialog(true);
+            }}
+          />
+        )}
         <PanelDialog
           visible={openAddDialog}
           hideDialog={() => setOpenAddDialog(false)}
@@ -141,3 +121,24 @@ export default function PanelsInfoSection() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#f5f5f5",
+    padding: 8,
+    paddingTop: 16,
+    borderRadius: 8,
+    marginVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  title: {
+    fontFamily: "Marmelad",
+    fontSize: 24,
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+});

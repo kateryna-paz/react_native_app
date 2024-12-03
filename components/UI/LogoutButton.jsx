@@ -36,12 +36,11 @@ export default function LogoutButton({ styles }) {
         icon="logout-variant"
         mode="outlined"
         iconColor="#991818"
-        size={28}
+        size={26}
         style={[stylesC.iconButton, styles]}
         onPress={showDialog}
       />
 
-      {/* Logout Confirmation Dialog */}
       <Portal>
         <Dialog visible={visible} onDismiss={hideDialog}>
           <Dialog.Title>Confirm Logout</Dialog.Title>
@@ -60,7 +59,8 @@ export default function LogoutButton({ styles }) {
 
 const stylesC = StyleSheet.create({
   iconButton: {
-    width: 48,
-    height: 48,
+    width: 46,
+    height: 46,
+    borderRadius: 24,
   },
 });

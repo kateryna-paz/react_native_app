@@ -19,11 +19,10 @@ export default function WelcomeScreen() {
       >
         <View style={{ padding: 30 }}>
           <View>
-            <Text style={styles.title}>Welcome to SolarManager!</Text>
+            <Text style={styles.title}>Вітаємо у SolarManager!</Text>
             <Text style={styles.subtitle}>
-              Manage and monitor your solar panels with ease.
+              Керуйте та контролюйте свої сонячні панелі з легкістю.
             </Text>
-            <Text style={styles.started}>Let’s get started</Text>
           </View>
 
           <TouchableOpacity
@@ -33,7 +32,7 @@ export default function WelcomeScreen() {
             <Text
               style={{ color: "#1f6228", fontFamily: "Kurale", fontSize: 20 }}
             >
-              Log in
+              Увійти
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -43,7 +42,7 @@ export default function WelcomeScreen() {
             <Text
               style={{ color: "white", fontFamily: "Kurale", fontSize: 20 }}
             >
-              Create an account
+              Зареєструватись
             </Text>
           </TouchableOpacity>
         </View>
@@ -77,19 +76,13 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontFamily: "Marmelad",
     color: "black",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontFamily: "Kurale",
-    color: "#666",
     marginBottom: 50,
   },
-  started: {
-    fontSize: 24,
-    fontFamily: "RobotoSlab",
-    color: "#333",
-    marginBottom: 30,
+  subtitle: {
+    fontSize: 22,
+    fontFamily: "Kurale",
+    color: "#360a70",
+    marginBottom: 60,
     textAlign: "center",
   },
   logInButton: {

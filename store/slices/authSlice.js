@@ -2,29 +2,73 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../services/axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export const initializeAuth = createAsyncThunk(
+  "auth/initializeAuth",
+  async (_, { rejectWithValue }) => {
+    try {
+      const user = await AsyncStorage.getItem("user");
+      const token = await AsyncStorage.getItem("token");
+
+      if (user && token) {
+        axiosInstance.defaults.headers.Authorization = `Bearer ${token}`;
+        return { user: JSON.parse(user), token };
+      }
+      return { user: null, token: null };
+    } catch (error) {
+      return rejectWithValue("Не вдалося ініціалізувати авторизацію");
+    }
+  }
+);
+
 export const registerUser = createAsyncThunk(
   "auth/register",
-  async (
-    { name, email, password, locationId, panelIds, applianceIds },
-    { rejectWithValue }
-  ) => {
+  async (_, { rejectWithValue, getState }) => {
+    const state = getState();
+
+    console.log(state.auth.user);
+    const { name, email, password } = state.auth.user;
+
     try {
-      const user = await axiosInstance.post("/users/register", {
-        name,
-        email,
-        password,
-        locationId,
-        panelIds,
-        applianceIds,
-      });
-      console.log(user.data);
-      return user.data;
-    } catch (error) {
-      if (error.response && error.response.data.message) {
-        return rejectWithValue(error.response.data.message);
+      if (name && email && password) {
+        const response = await axiosInstance.post("/users/register", {
+          name,
+          email,
+          password,
+        });
+        return response.data;
       } else {
-        return rejectWithValue(error.message);
+        return rejectWithValue(
+          "Сталася помилка при створені акаунта, перевірте чи було  введено ім'я, електронна пошта та пароль."
+        );
       }
+    } catch (error) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Request failed",
+        status: error.response?.status || 503,
+      });
+    }
+  }
+);
+
+export const setRegisterUserData = createAsyncThunk(
+  "auth/setRegisterUserData",
+  async ({ name, email, password }, { rejectWithValue }) => {
+    try {
+      const userInDB = await axiosInstance.get(`/users/email/${email}`);
+
+      console.log(userInDB?.data);
+      if (userInDB.data.id) {
+        return rejectWithValue("Користувач з таким email вже існує");
+      } else {
+        return { name, email, password };
+      }
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+          error.response?.message ||
+          error.data?.message ||
+          "Request failed"
+      );
     }
   }
 );
@@ -37,7 +81,6 @@ export const loginUser = createAsyncThunk(
         email,
         password,
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue({
@@ -52,7 +95,7 @@ export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await AsyncStorage.removeItem("user");
+      await AsyncStorage.multiRemove(["token", "user"]);
       return null;
     } catch (error) {
       return rejectWithValue("Помилка виходу з акаунту");
@@ -61,8 +104,9 @@ export const logoutUser = createAsyncThunk(
 );
 
 const initialState = {
+  user: null,
+  isLoggedIn: false,
   isLoading: false,
-  user: {},
   userToken: null,
   error: null,
 };
@@ -70,7 +114,6 @@ const initialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(registerUser.pending, (state) => {
@@ -81,11 +124,28 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.user;
         state.userToken = action.payload.token;
-        AsyncStorage.setItem("token", action.payload.token);
-        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
         state.error = null;
+        AsyncStorage.multiSet([
+          ["user", JSON.stringify(action.payload.user)],
+          ["token", action.payload.token],
+        ]);
+        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
       })
       .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(setRegisterUserData.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(setRegisterUserData.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = { ...action.payload };
+        console.log(state.user);
+        state.error = null;
+      })
+      .addCase(setRegisterUserData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -95,20 +155,33 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        console.log("login reducer token: " + action.payload.token);
-        console.log("login reducer user: " + action.payload.user);
-        state.userToken = action.payload.token;
         state.user = action.payload.user;
-        AsyncStorage.setItem("token", action.payload.token);
-        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
+        state.userToken = action.payload.token;
         state.error = null;
+        AsyncStorage.multiSet([
+          ["user", JSON.stringify(action.payload.user)],
+          ["token", action.payload.token],
+        ]);
+        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        state.error = action.payload;
         state.isLoading = false;
+        state.error = action.payload;
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.userToken = null;
+        state.isLoggedIn = false;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.userToken = action.payload.token;
+        state.isLoggedIn = !!action.payload.token;
+      })
+      .addCase(initializeAuth.rejected, (state) => {
+        state.user = null;
+        state.userToken = null;
+        state.isLoggedIn = false;
       });
   },
 });

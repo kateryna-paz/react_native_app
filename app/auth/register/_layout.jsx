@@ -30,6 +30,8 @@ export default function RegisterLayout() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="panel" />
+      <Stack.Screen name="location" />
     </Stack>
   );
 }

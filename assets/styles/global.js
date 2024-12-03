@@ -11,6 +11,6 @@ export const colors = {
   lightBlue: "#d7f0ff",
   blue: "#83CFFF",
   grape: "#672ab7",
-  lightGrape: "#f2e8ff",
+  lightGrape: "#f6efff",
   darkGrape: "#360a70",
 };

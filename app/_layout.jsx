@@ -1,10 +1,10 @@
 import { Stack } from "expo-router";
-import { Provider } from "react-redux";
+import { Provider, useDispatch, useSelector } from "react-redux";
 import store from "../store/store";
 import { FontProvider, useFontsLoaded } from "../context/fontsContext";
 import { PaperProvider } from "react-native-paper";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { initializeAuth } from "../store/slices/authSlice";
 
 export default function Layout() {
   return (
@@ -19,18 +19,15 @@ export default function Layout() {
 }
 
 const MainLayout = () => {
+  const dispatch = useDispatch();
   const { loaded, error } = useFontsLoaded();
-  const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const { isLoggedIn } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem("jwtToken");
-      setIsLoggedIn(!!token);
-    };
-    checkToken();
-  }, []);
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
-  if (!loaded || isLoggedIn === null) {
+  if (!loaded) {
     return null;
   }
 
@@ -39,11 +36,7 @@ const MainLayout = () => {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack screenOptions={{ headerShown: false }}>
       {isLoggedIn ? (
         <Stack.Screen name="(tabs)" />
       ) : (

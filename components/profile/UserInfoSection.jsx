@@ -1,15 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import UserAvatar from "./UserAvatar";
-import { useFontsLoaded } from "../../context/fontsContext";
 
-export default function UserInfoSection() {
-  const { loaded, error } = useFontsLoaded();
-
-  if (!loaded && !error) {
-    return null;
-  }
-
+export default function UserInfoSection({ user }) {
   return (
     <View style={styles.container}>
       <UserAvatar size={96} />
@@ -17,19 +10,20 @@ export default function UserInfoSection() {
         <Text
           style={{
             fontFamily: "SofiaSansBold",
-            fontSize: 26,
-            marginLeft: 10,
+            fontSize: 28,
+            marginLeft: 14,
           }}
         >
-          Victoria
+          {user ? user?.name : "Guest"}
         </Text>
         <Text
           style={{
-            fontFamily: "SofiaSans",
-            fontSize: 18,
+            fontFamily: "Marmelad",
+            fontSize: 17,
+            color: "#555",
           }}
         >
-          victoria4527@gmail.com
+          {user ? user?.email : "email@gmail.com"}
         </Text>
       </View>
     </View>
@@ -38,17 +32,26 @@ export default function UserInfoSection() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    padding: 14,
     display: "flex",
     flexDirection: "row",
     alignItems: "bottom",
+    backgroundColor: "#f5f5f5",
+    paddingVertical: 16,
+    borderRadius: 8,
+    marginVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 4,
   },
   info: {
-    marginLeft: 20,
-    marginBottom: 12,
+    marginLeft: 16,
+    marginBottom: 14,
     display: "flex",
     flexDirection: "column",
     justifyContent: "flex-end",
-    gap: 12,
+    gap: 6,
   },
 });

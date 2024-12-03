@@ -1,10 +1,19 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Alert, StyleSheet } from "react-native";
-import { ActivityIndicator, Button } from "react-native-paper";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import {
+  ActivityIndicator,
+  Button,
+  Icon,
+  IconButton,
+} from "react-native-paper";
 import { router } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchLocation, setPermission } from "../../store/slices/locationSlice";
+import {
+  fetchLocation,
+  getLocationWithGeo,
+  setPermission,
+} from "../../store/slices/locationAndMapSlice";
+import LocationsButtons from "../LocationsButtons";
 
 export default function LocationSection() {
   const dispatch = useDispatch();
@@ -12,71 +21,149 @@ export default function LocationSection() {
     (state) => state.location
   );
 
+  const [localLocation, setLoacalLocation] = useState(null);
+  const [visibleOptions, setVisibleOptions] = useState(false);
+
+  const openOptions = () => {
+    setVisibleOptions(!visibleOptions);
+  };
+
   const handleFetchLocation = async () => {
     try {
-      const result = await dispatch(fetchLocation()).unwrap();
+      const result = await dispatch(getLocationWithGeo()).unwrap();
       Alert.alert(
         "Ваше місцезнаходження",
-        `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.region}, ${result.city}`
+        `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.regionName}`
       );
+      setVisibleOptions(false);
     } catch (err) {
       Alert.alert("Помилка", err);
     }
   };
 
   const handleUseMap = async () => {
-    router.push("/profile/map");
+    router.push(`/profile/map`);
+    setVisibleOptions(false);
   };
 
   useEffect(() => {
     if (!permission) {
       dispatch(setPermission());
     }
-  }, [dispatch]);
+    if (!location) {
+      dispatch(fetchLocation());
+      setVisibleOptions(false);
+    }
+    if (location) {
+      setLoacalLocation(location);
+    }
+  }, [permission, location, dispatch]);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}> Місце розташування панелей</Text>
-      <Button
-        mode="outlined"
-        onPress={handleFetchLocation}
-        contentStyle={styles.buttonContent}
-        textColor={"black"}
-        style={styles.outlinedButton}
-      >
-        {isLoading && <ActivityIndicator size="small" color="#51bbfe" />}
-        {!isLoading && (
-          <>
-            <Text style={styles.buttonText}>
-              Скористатись геолокацією{"  "}
-            </Text>
-            <FontAwesome name="map-marker" size={21} color="black" />
-          </>
-        )}
-      </Button>
-      <Button
-        mode="contained"
-        onPress={handleUseMap}
-        contentStyle={styles.buttonContent}
-        buttonColor={"#ddA500"}
-        textColor={"white"}
-        style={styles.containedButton}
-      >
-        <Text style={styles.buttonText}>Показати на карті{"  "}</Text>
-        <FontAwesome name="map-o" size={20} color="white" />
-      </Button>
+      <Text style={styles.title}>Розташування панелей</Text>
+
+      {isLoading ? (
+        <ActivityIndicator
+          style={{ marginTop: 30, marginBottom: 20 }}
+          size="large"
+          color="#51bbfe"
+        />
+      ) : (
+        <>
+          {localLocation?.regionName ? (
+            <>
+              <View style={styles.subtitleContainer}>
+                <Icon source="check-outline" size={20} color="green" />
+                <Text style={styles.subtitle}>{localLocation?.regionName}</Text>
+              </View>
+              <View style={styles.option}>
+                <Text style={styles.description}>
+                  Непральна локація? Змініть
+                </Text>
+                <IconButton
+                  icon="arrow-down-drop-circle-outline"
+                  size={28}
+                  iconColor="#360a70"
+                  onPress={openOptions}
+                  style={[styles.icon, visibleOptions && styles.iconRotated]}
+                />
+              </View>
+              {visibleOptions && (
+                <LocationsButtons
+                  handleFetchLocation={handleFetchLocation}
+                  handleUseMap={handleUseMap}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <View style={styles.subtitleContainer}>
+                <Icon source="close-outline" size={20} color="red" />
+                <Text style={styles.subtitle}>Не визначено</Text>
+              </View>
+              <Text style={styles.description}>Оберіть спосіб визначення</Text>
+              <LocationsButtons
+                handleFetchLocation={handleFetchLocation}
+                handleUseMap={handleUseMap}
+              />
+            </>
+          )}
+        </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 10,
+    backgroundColor: "#f5f5f5",
+    padding: 14,
+    borderRadius: 8,
     marginVertical: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 4,
   },
   title: {
     fontFamily: "Marmelad",
     fontSize: 24,
     marginBottom: 12,
+    marginLeft: 2,
+  },
+  subtitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    marginLeft: 10,
+  },
+  subtitle: {
+    fontFamily: "Kurale",
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  option: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginLeft: 10,
+    marginVertical: -8,
+    marginTop: -12,
+  },
+  icon: {
+    transform: [{ rotate: "0deg" }],
+  },
+  iconRotated: {
+    transform: [{ rotate: "180deg" }],
+  },
+  description: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    fontFamily: "Marmelad",
+    marginBottom: 6,
   },
   buttonContent: {
     flexDirection: "row-reverse",
@@ -101,16 +188,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     paddingTop: 4,
     height: 50,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
   },
 });

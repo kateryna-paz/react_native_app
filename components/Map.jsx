@@ -1,11 +1,15 @@
-import { Link, router, useNavigation } from "expo-router";
+import { useRouter } from "expo-router";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import { Alert, SafeAreaView, StyleSheet, Text } from "react-native";
+import { Alert, SafeAreaView, StyleSheet } from "react-native";
 import { ActivityIndicator, FAB } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
-import { setCoordinatesAndFetchAddress } from "../store/slices/locationSlice";
-import { setMapMarkerCoordinates } from "../store/slices/mapSlice";
-import { useState, useEffect } from "react";
+import {
+  setCoordinatesAndFetchAddress,
+  setMapMarkerCoordinates,
+  setRegisterLocationWithMap,
+} from "../store/slices/locationAndMapSlice";
+import { useState, useEffect, useCallback } from "react";
+import ErrorText from "./UI/ErrorText";
 
 const INITIAL_REGION = {
   latitude: 49.4501,
@@ -14,9 +18,15 @@ const INITIAL_REGION = {
   longitudeDelta: 10,
 };
 
-export default function Map() {
+export default function Map({ forRegister }) {
   const dispatch = useDispatch();
-  const { markerCoords, isLoading, error } = useSelector((state) => state.map);
+  const router = useRouter();
+  const { params } = router;
+  const onSaveLocation = params?.onSaveLocation;
+
+  const { markerCoords, location, isLoading, error } = useSelector(
+    (state) => state.location
+  );
 
   const [currentCoords, setCurrentCoords] = useState(
     markerCoords || INITIAL_REGION
@@ -26,28 +36,38 @@ export default function Map() {
     setCurrentCoords(region);
   };
 
-  const saveLocation = async () => {
+  const saveLocation = useCallback(async () => {
     try {
       dispatch(setMapMarkerCoordinates(currentCoords));
-      const result = await dispatch(
-        setCoordinatesAndFetchAddress(currentCoords)
-      ).unwrap();
-
-      const { latitude, longitude, region, city } = result;
+      let result;
+      if (forRegister) {
+        result = await dispatch(
+          setRegisterLocationWithMap(currentCoords)
+        ).unwrap();
+      } else {
+        result = await dispatch(
+          setCoordinatesAndFetchAddress(currentCoords)
+        ).unwrap();
+      }
 
       Alert.alert(
         "Ваше місцезнаходження",
-        `Широта: ${latitude}, \nДовгота: ${longitude}, \nВаша область: ${region}, ${city}`,
+        `Широта: ${result?.latitude}, \nДовгота: ${result?.longitude}, \nВаша область: ${result?.regionName}`,
         [
           { text: "Відмінити", style: "cancel" },
-          { text: "ОК", onPress: () => router.back() },
+          {
+            text: "ОК",
+            onPress: () => {
+              if (onSaveLocation) onSaveLocation();
+              router.back();
+            },
+          },
         ]
       );
-    } catch (error) {
-      console.error("Помилка:", error);
+    } catch (err) {
       Alert.alert("Помилка", "Не вдалося зберегти місцезнаходження.");
     }
-  };
+  }, [currentCoords]);
 
   useEffect(() => {
     if (markerCoords) {
@@ -58,20 +78,7 @@ export default function Map() {
   }, []);
 
   if (error) {
-    return (
-      <Text
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          color: "red",
-          fontSize: 20,
-          fontFamily: "Marmelad",
-        }}
-      >
-        {error}
-      </Text>
-    );
+    return <ErrorText error={error} />;
   }
 
   if (isLoading) {

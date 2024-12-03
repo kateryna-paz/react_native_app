@@ -1,18 +1,21 @@
 import { Tabs } from "expo-router";
 import MyTabBar from "../../components/TabBar";
+import { StyleSheet } from "react-native";
 
 export default () => {
   return (
-    <Tabs tabBar={(props) => <MyTabBar {...props} />}>
+    <Tabs
+      screenOptions={{
+        headerStyle: { backgroundColor: "#360a70" },
+      }}
+      tabBar={(props) => <MyTabBar {...props} />}
+    >
       <Tabs.Screen
         name="home"
         options={{
           title: "Головна",
           headerTitleAlign: "center",
-          headerTitleStyle: {
-            fontFamily: "Kurale",
-            fontSize: 26,
-          },
+          headerTitleStyle: styles.header,
         }}
       />
       <Tabs.Screen
@@ -20,10 +23,7 @@ export default () => {
         options={{
           title: "Розподіл",
           headerTitleAlign: "center",
-          headerTitleStyle: {
-            fontFamily: "Kurale",
-            fontSize: 26,
-          },
+          headerTitleStyle: styles.header,
         }}
       />
       <Tabs.Screen
@@ -31,10 +31,7 @@ export default () => {
         options={{
           title: "Прилади",
           headerTitleAlign: "center",
-          headerTitleStyle: {
-            fontFamily: "Kurale",
-            fontSize: 26,
-          },
+          headerTitleStyle: styles.header,
         }}
       />
       <Tabs.Screen
@@ -42,12 +39,17 @@ export default () => {
         options={{
           title: "Профіль",
           headerTitleAlign: "center",
-          headerTitleStyle: {
-            fontFamily: "Kurale",
-            fontSize: 26,
-          },
+          headerTitleStyle: styles.header,
         }}
       />
     </Tabs>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    fontFamily: "Kurale",
+    fontSize: 26,
+    color: "white",
+  },
+});

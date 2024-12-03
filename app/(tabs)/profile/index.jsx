@@ -3,30 +3,52 @@ import UserInfoSection from "../../../components/profile/UserInfoSection";
 import LocationSection from "../../../components/profile/LocationSection";
 import PanelsInfoSection from "../../../components/profile/PanelsInfoSection";
 import LogoutButton from "../../../components/UI/LogoutButton";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import ErrorText from "../../../components/UI/ErrorText";
+import { ActivityIndicator } from "react-native-paper";
+import MyContainer from "../../../components/UI/MyContainer";
 
 export default function ProfileScreen() {
+  const {
+    user,
+    isLoading,
+    error: userError,
+  } = useSelector((state) => state.auth);
+
+  if (userError) {
+    return <ErrorText error={userError} />;
+  }
+  if (isLoading) {
+    <ActivityIndicator
+      size={60}
+      color="#360a70"
+      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+    />;
+  }
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <LogoutButton
-        styles={{
-          position: "absolute",
-          top: 14,
-          right: 14,
-          borderWidth: 3,
-          borderColor: "#ba0b0b",
-        }}
-      />
-      <UserInfoSection />
-      <LocationSection />
-      <PanelsInfoSection />
-    </ScrollView>
+    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <LogoutButton
+          styles={{
+            position: "absolute",
+            top: 16,
+            right: 10,
+            borderWidth: 2,
+            zIndex: 10,
+            borderColor: "#ba0b0b",
+          }}
+        />
+        <UserInfoSection user={user} />
+        <LocationSection />
+        <PanelsInfoSection user={user} />
+      </ScrollView>
+    </MyContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    paddingBottom: 90,
+    padding: 14,
+    paddingBottom: 100,
   },
 });

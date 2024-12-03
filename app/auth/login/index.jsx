@@ -14,6 +14,7 @@ import BackButton from "../../../components/UI/BackButton";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../../store/slices/authSlice";
 import { ActivityIndicator } from "react-native";
+import MyContainer from "../../../components/UI/MyContainer";
 
 const validateEmail = (email) => {
   return String(email)
@@ -61,66 +62,55 @@ export default function Login() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <ImageBackground
-          source={require("../../../assets/bg2.jpg")}
-          style={styles.image}
-        >
-          <ActivityIndicator
-            size={60}
-            color="#360a70"
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          />
-        </ImageBackground>
-      </View>
+      <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+        <ActivityIndicator
+          size={60}
+          color="#360a70"
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        />
+      </MyContainer>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={require("../../../assets/bg2.jpg")}
-        style={styles.image}
-      >
-        <BackButton
-          stylesBtn={styles.backButton}
-          onPress={() => router.push("/auth")}
-          iconColor={"white"}
-        />
-        <View style={styles.form}>
-          <Text style={styles.title}>Login</Text>
+    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+      <BackButton
+        stylesBtn={styles.backButton}
+        onPress={() => router.push("/auth")}
+      />
+      <View style={styles.form}>
+        <Text style={styles.title}>Увійти</Text>
 
-          <TextInput
-            label="Електронна пошта"
-            mode="flat"
-            value={email}
-            onChangeText={(val) => setEmail(val)}
-            style={styles.input}
-            keyboardType="email-address"
-          />
-          <TextInput
-            label="Пароль"
-            mode="flat"
-            secureTextEntry
-            value={password}
-            onChangeText={(val) => setPassword(val)}
-            style={styles.input}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-          <Text style={styles.registerText}>
-            Don't have an account?{" "}
-            <Text
-              style={styles.registerLink}
-              onPress={() => router.push("/auth/register")}
-            >
-              Sign Up
-            </Text>
+        <TextInput
+          label="Електронна пошта"
+          mode="flat"
+          value={email}
+          onChangeText={(val) => setEmail(val)}
+          style={styles.input}
+          keyboardType="email-address"
+        />
+        <TextInput
+          label="Пароль"
+          mode="flat"
+          secureTextEntry
+          value={password}
+          onChangeText={(val) => setPassword(val)}
+          style={styles.input}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Увійти</Text>
+        </TouchableOpacity>
+        <Text style={styles.registerText}>
+          Ще не маєте акаунта?{"  "}
+          <Text
+            style={styles.registerLink}
+            onPress={() => router.push("/auth/register")}
+          >
+            Зареєструватись
           </Text>
-        </View>
-      </ImageBackground>
-    </View>
+        </Text>
+      </View>
+    </MyContainer>
   );
 }
 
@@ -136,12 +126,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 40,
+    top: 20,
     left: 20,
-    backgroundColor: "#672ab7",
+    backgroundColor: "#f5f5f5",
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: "#1f6228",
   },
   form: {
     flex: 1,
@@ -150,17 +140,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     marginBottom: 20,
-    color: "black",
-    fontFamily: "RobotoSlab",
+    fontFamily: "Kurale",
   },
   input: {
     width: "100%",
-    fontFamily: "Marmelad",
     paddingHorizontal: 10,
     fontSize: 16,
     marginBottom: 15,
+    backgroundColor: "#f5f5f5",
   },
   button: {
     width: "100%",
@@ -169,20 +158,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    marginBottom: 20,
+    marginTop: 5,
+    marginBottom: 10,
   },
   buttonText: {
     fontSize: 18,
     color: "#fff",
-    fontFamily: "Marmelad",
+    fontFamily: "Kurale",
   },
   registerText: {
     fontSize: 16,
-    color: "#333",
-    fontFamily: "RobotoSlab",
+    color: "#444",
+    fontFamily: "SofiaSans",
   },
   registerLink: {
-    color: "#1f6228",
-    fontFamily: "RobotoSlabBold",
+    color: "#672ab7",
+    fontFamily: "SofiaSansBold",
   },
 });
