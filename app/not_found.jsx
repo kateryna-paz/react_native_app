@@ -1,5 +1,6 @@
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { MyLightTheme } from "../assets/theme/global";
 
 export default function NotFoundScreen() {
   return (
@@ -29,8 +30,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 10,
     borderRadius: 5,
-    backgroundColor: "#333",
-    color: "#fff",
+    backgroundColor: MyLightTheme.colors.textPrimary,
+    color: MyLightTheme.colors.textOnPrimary,
     fontSize: 18,
   },
 });

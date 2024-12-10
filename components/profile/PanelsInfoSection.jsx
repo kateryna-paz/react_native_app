@@ -2,7 +2,12 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Alert, StyleSheet } from "react-native";
 import PanelCard from "./PanelCard";
 import { useDispatch, useSelector } from "react-redux";
-import { ActivityIndicator, Button, IconButton } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Button,
+  IconButton,
+  useTheme,
+} from "react-native-paper";
 import { addPanel, fetchPanels } from "../../store/slices/panelSlice";
 import PanelDialog from "../UI/PanelDialog";
 import { fetchPanelTypes } from "../../store/slices/typesSlice";
@@ -10,8 +15,12 @@ import ErrorText from "../UI/ErrorText";
 
 export default function PanelsInfoSection({ user }) {
   const dispatch = useDispatch();
-  const { panels, isLoaded, error } = useSelector((state) => state.panel);
-  const { panelTypes, isTypesLoaded, errorTypes } = useSelector(
+  const {
+    panels,
+    isLoading: isPanelLoading,
+    error,
+  } = useSelector((state) => state.panel);
+  const { panelTypes, isTypesLoading, errorTypes } = useSelector(
     (state) => state.panelTypes
   );
 
@@ -21,6 +30,7 @@ export default function PanelsInfoSection({ user }) {
     typeId: null,
   });
 
+  const theme = useTheme();
   const [openAddDialog, setOpenAddDialog] = useState(false);
 
   const handleAddPanel = async () => {
@@ -54,18 +64,18 @@ export default function PanelsInfoSection({ user }) {
     await dispatch(fetchPanels());
   };
 
-  const isLoading = !isLoaded || !isTypesLoaded;
+  const isLoading = isPanelLoading || isTypesLoading;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Сонячні панелі</Text>
       <View style={{ alignItems: "center" }}>
         {(errorTypes || error) && <ErrorText error={errorTypes || error} />}
-        {isLoading && !error && (
+        {isLoading && !error && !panels && (
           <ActivityIndicator
             style={{ marginTop: 30, marginBottom: 20 }}
             size="large"
-            color="#51bbfe"
+            color={theme.colors.blue}
           />
         )}
         {!error && !isLoading && panels && panels.length === 0 && (
@@ -95,11 +105,11 @@ export default function PanelsInfoSection({ user }) {
               refresh={refresh}
             />
           ))}
-        {panels && !errorTypes && isTypesLoaded && (
+        {panels && !errorTypes && !isTypesLoading && (
           <IconButton
             icon="plus"
             mode="contained"
-            containerColor="#51bbfe"
+            containerColor={theme.colors.blue}
             iconColor="white"
             style={{ marginTop: 10 }}
             size={30}

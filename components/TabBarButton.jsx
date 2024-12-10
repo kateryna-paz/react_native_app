@@ -6,9 +6,11 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useTheme } from "react-native-paper";
 
 function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
+  const theme = useTheme();
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
     >
       <Animated.View style={animatedIcon}>
         {icon[routeName]({
-          color: isFocused ? "white" : "#222",
+          color: isFocused ? theme.colors.white : theme.colors.textPrimary,
           size: 26,
         })}
       </Animated.View>
@@ -44,7 +46,7 @@ function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
       <Animated.Text
         style={[
           {
-            color: isFocused ? "white" : "grey",
+            color: isFocused ? theme.colors.white : theme.colors.textSecondary,
             fontSize: 11,
             fontFamily: "SofiaSans",
           },

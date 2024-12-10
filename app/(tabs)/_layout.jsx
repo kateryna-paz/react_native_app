@@ -1,12 +1,18 @@
 import { Tabs } from "expo-router";
 import MyTabBar from "../../components/TabBar";
 import { StyleSheet } from "react-native";
+import { shadow, useTheme } from "react-native-paper";
 
 export default () => {
+  const theme = useTheme();
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: "#360a70" },
+        headerStyle: {
+          backgroundColor: theme.colors.secondaryDark,
+          shadowColor: "transparent",
+          elevation: 0,
+        },
       }}
       tabBar={(props) => <MyTabBar {...props} />}
     >

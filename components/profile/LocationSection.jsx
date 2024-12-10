@@ -5,6 +5,7 @@ import {
   Button,
   Icon,
   IconButton,
+  useTheme,
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -16,6 +17,7 @@ import {
 import LocationsButtons from "../LocationsButtons";
 
 export default function LocationSection() {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const { location, permission, isLoading, error } = useSelector(
     (state) => state.location
@@ -67,7 +69,7 @@ export default function LocationSection() {
         <ActivityIndicator
           style={{ marginTop: 30, marginBottom: 20 }}
           size="large"
-          color="#51bbfe"
+          color={theme.colors.secondary}
         />
       ) : (
         <>
@@ -84,7 +86,7 @@ export default function LocationSection() {
                 <IconButton
                   icon="arrow-down-drop-circle-outline"
                   size={28}
-                  iconColor="#360a70"
+                  iconColor={theme.colors.primary}
                   onPress={openOptions}
                   style={[styles.icon, visibleOptions && styles.iconRotated]}
                 />

@@ -9,7 +9,7 @@ export default function App() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      setPath("/profile");
+      setPath("/home");
     } else {
       setPath("/auth");
     }

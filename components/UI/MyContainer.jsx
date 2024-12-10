@@ -1,20 +1,12 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { View, ImageBackground, StyleSheet } from "react-native";
 
-export default function MyContainer({
-  children,
-  backgroundImage,
-  style,
-  imageStyle,
-}) {
+export default function MyContainer({ children, colorStart, colorEnd, style }) {
   return (
     <View style={[styles.container, style]}>
-      <ImageBackground
-        source={backgroundImage}
-        style={[styles.image, imageStyle]}
-      >
-        {children}
-      </ImageBackground>
+      <LinearGradient colors={[colorStart, colorEnd]} style={styles.gradient} />
+      {children}
     </View>
   );
 }
@@ -23,8 +15,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  image: {
-    flex: 1,
-    justifyContent: "center",
+  gradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
 });

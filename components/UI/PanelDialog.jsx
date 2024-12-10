@@ -1,13 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import {
-  Button,
-  Dialog,
-  Modal,
-  PaperProvider,
-  Portal,
-} from "react-native-paper";
+import { StyleSheet } from "react-native";
+import { Button, Dialog, Portal } from "react-native-paper";
 import ReductPanelCard from "../profile/ReductCardPanel";
+import { MyLightTheme } from "../../assets/theme/global";
 
 export default function PanelDialog({
   visible,
@@ -50,20 +45,20 @@ const styles = StyleSheet.create({
   dialogTitle: {
     fontFamily: "Marmelad",
     fontSize: 22,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     textAlign: "center",
     marginBottom: 25,
   },
   button: {
     marginRight: 10,
-    borderColor: "#672ab7",
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     paddingHorizontal: 15,
   },
   saveButton: {
-    backgroundColor: "#672ab7",
-    borderColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
     color: "white",
     paddingHorizontal: 42,

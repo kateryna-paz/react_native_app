@@ -20,7 +20,7 @@ export default function UserInfoSection({ user }) {
           style={{
             fontFamily: "Marmelad",
             fontSize: 17,
-            color: "#555",
+            color: "grey",
           }}
         >
           {user ? user?.email : "email@gmail.com"}

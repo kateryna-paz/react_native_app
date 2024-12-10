@@ -9,12 +9,14 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { TextInput } from "react-native-paper";
+import { TextInput, useTheme } from "react-native-paper";
 import BackButton from "../../../components/UI/BackButton";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../../store/slices/authSlice";
 import { ActivityIndicator } from "react-native";
 import MyContainer from "../../../components/UI/MyContainer";
+import { MyLightTheme } from "../../../assets/theme/global";
+import LoadingScreen from "../../../components/UI/LoadingScreen";
 
 const validateEmail = (email) => {
   return String(email)
@@ -25,6 +27,7 @@ const validateEmail = (email) => {
 };
 
 export default function Login() {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const router = useRouter();
   const { user, isLoading, error } = useSelector((state) => state.auth);
@@ -62,20 +65,22 @@ export default function Login() {
 
   if (isLoading) {
     return (
-      <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
-        <ActivityIndicator
-          size={60}
-          color="#360a70"
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        />
-      </MyContainer>
+      <LoadingScreen
+        colorStart={theme.colors.primaryDark}
+        colorEnd={theme.colors.primaryLight}
+        indicatorColor={theme.colors.white}
+      />
     );
   }
 
   return (
-    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+    <MyContainer
+      colorStart={theme.colors.primaryDark}
+      colorEnd={theme.colors.primaryLight}
+    >
       <BackButton
         stylesBtn={styles.backButton}
+        iconColor={theme.colors.white}
         onPress={() => router.push("/auth")}
       />
       <View style={styles.form}>
@@ -128,10 +133,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 20,
     left: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.primaryDark,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: "#1f6228",
+    borderColor: MyLightTheme.colors.white,
   },
   form: {
     flex: 1,
@@ -143,18 +148,19 @@ const styles = StyleSheet.create({
     fontSize: 36,
     marginBottom: 20,
     fontFamily: "Kurale",
+    color: "white",
   },
   input: {
     width: "100%",
     paddingHorizontal: 10,
     fontSize: 16,
     marginBottom: 15,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.background,
   },
   button: {
     width: "100%",
     height: 50,
-    backgroundColor: "#1f6228",
+    backgroundColor: MyLightTheme.colors.greenDark,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
@@ -163,16 +169,16 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    color: "#fff",
+    color: "white",
     fontFamily: "Kurale",
   },
   registerText: {
     fontSize: 16,
-    color: "#444",
+    color: MyLightTheme.colors.textPrimary,
     fontFamily: "SofiaSans",
   },
   registerLink: {
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     fontFamily: "SofiaSansBold",
   },
 });

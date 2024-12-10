@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { setRegisterPanel } from "../../../store/slices/panelSlice";
-import { Button, Icon, TextInput } from "react-native-paper";
+import { Button, Icon, TextInput, useTheme } from "react-native-paper";
 import MyContainer from "../../../components/UI/MyContainer";
 import { fetchPanelTypes } from "../../../store/slices/typesSlice";
 import { useDispatch, useSelector } from "react-redux";
 import SelectList from "../../../components/UI/SelectList";
 import { useRouter } from "expo-router";
+import { MyLightTheme } from "../../../assets/theme/global";
 
 export default function panel() {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const router = useRouter();
   const { panelTypes, isTypesLoaded, errorTypes } = useSelector(
@@ -45,7 +47,11 @@ export default function panel() {
   }, [dispatch, panelData]);
 
   return (
-    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+    <MyContainer
+      colorStart={theme.colors.primaryDark}
+      colorEnd={theme.colors.primaryLight}
+      style={{ flex: 1, justifyContent: "center" }}
+    >
       <Text style={styles.title}>Вітаю, акаунт створено!</Text>
       <Text style={styles.subtitle}>
         Тепер давайте додамо інформацію про сонячну панель
@@ -58,16 +64,16 @@ export default function panel() {
           marginHorizontal: 40,
         }}
       >
-        <View style={{ width: "100%" }}>
-          <SelectList
-            title="Оберіть тип панелей"
-            items={panelTypes}
-            selectedTypeId={panelData.typeId}
-            onSelect={handleTypeChange}
-          />
-        </View>
-
         <View style={styles.container}>
+          <View style={{ width: 274, marginLeft: -20, marginTop: 14 }}>
+            <SelectList
+              title="Оберіть тип панелей"
+              items={panelTypes}
+              selectedTypeId={panelData.typeId}
+              onSelect={handleTypeChange}
+            />
+          </View>
+
           <Text style={styles.label}>Введіть площу 1 панелі (у м²):</Text>
           <TextInput
             label="Площа 1 (м²)"
@@ -93,20 +99,24 @@ export default function panel() {
               {
                 width: "28%",
                 borderWidth: 2,
-                borderColor: "#672ab7",
-                backgroundColor: "#f5f5f5",
+                borderColor: theme.colors.primary,
+                backgroundColor: theme.colors.background,
               },
             ]}
             onPress={() => router.back()}
           >
-            <Icon source="arrow-left-thin" size={24} color="#672ab7" />
+            <Icon
+              source="arrow-left-thin"
+              size={24}
+              color={theme.colors.primary}
+            />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { width: "80%" }]}
             onPress={handleAddPanel}
           >
             <Text style={styles.buttonText}>Далі</Text>
-            <Icon source="arrow-right-thin" size={24} color="#fff" />
+            <Icon source="arrow-right-thin" size={24} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -117,7 +127,7 @@ export default function panel() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "column",
-    backgroundColor: "#f6efff",
+    backgroundColor: MyLightTheme.colors.primaryLight,
     paddingBottom: 20,
     paddingTop: 5,
     marginBottom: 5,
@@ -125,7 +135,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     justifyContent: "center",
     borderRadius: 15,
-    shadowColor: "#000",
+    shadowColor: "black",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
@@ -136,12 +146,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: "Kurale",
     textAlign: "center",
+    color: "white",
   },
   subtitle: {
     fontSize: 20,
     marginBottom: 20,
+    marginHorizontal: 18,
     fontFamily: "Kurale",
-    color: "#333",
+    color: MyLightTheme.colors.background,
     textAlign: "center",
   },
   label: {
@@ -155,7 +167,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 16,
     marginBottom: 15,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.background,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -164,7 +176,7 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 50,
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
@@ -175,7 +187,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    color: "#fff",
+    color: "white",
     fontFamily: "Kurale",
     lineHeight: 24,
   },

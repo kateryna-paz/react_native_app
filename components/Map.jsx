@@ -1,24 +1,36 @@
 import { useRouter } from "expo-router";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import { Alert, SafeAreaView, StyleSheet } from "react-native";
-import { ActivityIndicator, FAB } from "react-native-paper";
+import {
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { ActivityIndicator, FAB, useTheme } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setCoordinatesAndFetchAddress,
   setMapMarkerCoordinates,
   setRegisterLocationWithMap,
 } from "../store/slices/locationAndMapSlice";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import ErrorText from "./UI/ErrorText";
+import { MyLightTheme } from "../assets/theme/global";
+import LoadingScreen from "./UI/LoadingScreen";
+import BackButton from "./UI/BackButton";
+import * as Location from "expo-location";
+import { regionsUkr } from "../constants/ukrainianRegions";
 
-const INITIAL_REGION = {
-  latitude: 49.4501,
-  longitude: 31.5234,
-  latitudeDelta: 10,
-  longitudeDelta: 10,
+const INITIAL_COORDS = {
+  latitude: 50.4501,
+  longitude: 30.5234,
+  latitudeDelta: 25,
+  longitudeDelta: 25,
 };
 
 export default function Map({ forRegister }) {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const router = useRouter();
   const { params } = router;
@@ -28,25 +40,86 @@ export default function Map({ forRegister }) {
     (state) => state.location
   );
 
-  const [currentCoords, setCurrentCoords] = useState(
-    markerCoords || INITIAL_REGION
-  );
+  const [currentCoords, setCurrentCoords] = useState(null);
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const finalCoords = useMemo(() => {
+    if (markerCoords && markerCoords.latitude && markerCoords.longitude) {
+      return {
+        latitude: markerCoords.latitude,
+        longitude: markerCoords.longitude,
+        latitudeDelta: markerCoords.latitudeDelta || 25,
+        longitudeDelta: markerCoords.longitudeDelta || 25,
+      };
+    }
+    return INITIAL_COORDS;
+  }, [markerCoords]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    setTimeout(() => {
+      Alert.alert("Refreshed!", "Map data has been reloaded.");
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
+  useEffect(() => {
+    if (!currentCoords) {
+      setCurrentCoords(finalCoords);
+    }
+  }, [finalCoords, currentCoords]);
 
   const onRegionChangeComplete = (region) => {
     setCurrentCoords(region);
   };
 
+  const getRegionName = async (latitude, longitude) => {
+    if (
+      latitude >= 44.3864 &&
+      latitude <= 46.1927 &&
+      longitude >= 32.4919 &&
+      longitude <= 36.6209
+    ) {
+      return "Автономна Республіка Крим";
+    }
+
+    const address = await Location.reverseGeocodeAsync({ latitude, longitude });
+    if (!address || address.length === 0) {
+      return null;
+    }
+
+    const { region } = address[0] || {};
+    return regionsUkr[region] || null;
+  };
+
   const saveLocation = useCallback(async () => {
     try {
+      setIsSavingLocation(true);
+      const region = await getRegionName(
+        currentCoords.latitude,
+        currentCoords.longitude
+      );
+      if (!region) {
+        Alert.alert(
+          "Помилка",
+          "Не вдалося визначити область для заданих координат. Будь ласка, перевірте, чи відповідає розташування прапорця на карті одній з області України."
+        );
+        return;
+      }
       dispatch(setMapMarkerCoordinates(currentCoords));
       let result;
       if (forRegister) {
         result = await dispatch(
-          setRegisterLocationWithMap(currentCoords)
+          setRegisterLocationWithMap({ ...currentCoords, regionName: region })
         ).unwrap();
       } else {
         result = await dispatch(
-          setCoordinatesAndFetchAddress(currentCoords)
+          setCoordinatesAndFetchAddress({
+            ...currentCoords,
+            regionName: region,
+          })
         ).unwrap();
       }
 
@@ -66,66 +139,67 @@ export default function Map({ forRegister }) {
       );
     } catch (err) {
       Alert.alert("Помилка", "Не вдалося зберегти місцезнаходження.");
+    } finally {
+      setIsSavingLocation(false);
     }
-  }, [currentCoords]);
-
-  useEffect(() => {
-    if (markerCoords) {
-      setCurrentCoords(markerCoords);
-    } else {
-      setCurrentCoords(INITIAL_REGION);
-    }
-  }, []);
+  }, [currentCoords, onSaveLocation, router]);
 
   if (error) {
-    return <ErrorText error={error} />;
+    return (
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <BackButton
+          stylesBtn={styles.btnBack}
+          iconColor={theme.colors.accent}
+        />
+        <ErrorText error={error} />
+      </ScrollView>
+    );
   }
 
-  if (isLoading) {
+  if (isLoading || isSavingLocation || !currentCoords) {
     return (
-      <ActivityIndicator
-        size="large"
-        color="#51bbfe"
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      <LoadingScreen
+        colorStart={theme.colors.secondaryDark}
+        colorEnd={theme.colors.secondaryLight}
+        indicatorColor={theme.colors.white}
       />
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <MapView
-        style={styles.map}
-        onRegionChangeComplete={onRegionChangeComplete}
-        initialRegion={INITIAL_REGION}
-        provider={PROVIDER_GOOGLE}
-      >
-        {currentCoords && (
+      {currentCoords && (
+        <MapView
+          style={styles.map}
+          onRegionChangeComplete={onRegionChangeComplete}
+          initialRegion={currentCoords}
+          region={currentCoords}
+          provider={PROVIDER_GOOGLE}
+        >
           <Marker
-            coordinate={
-              {
-                latitude: currentCoords.latitude,
-                longitude: currentCoords.longitude,
-              } || INITIAL_REGION
-            }
+            coordinate={{
+              latitude: currentCoords.latitude,
+              longitude: currentCoords.longitude,
+            }}
             title="Your Location"
             style={styles.marker}
             draggable
             onDragEnd={(e) =>
               setCurrentCoords({
+                ...currentCoords,
                 latitude: e.nativeEvent.coordinate.latitude,
                 longitude: e.nativeEvent.coordinate.longitude,
               })
             }
           />
-        )}
-
-        <Circle
-          center={{ latitude: 49.4501, longitude: 31.5234 }}
-          radius={2}
-          strokeColor="rgba(0, 0, 255, 0.1)"
-          fillColor="rgba(0, 0, 255, 0)"
-        />
-      </MapView>
+        </MapView>
+      )}
       <FAB
         onPress={() => {
           router.back();
@@ -159,7 +233,7 @@ const styles = StyleSheet.create({
     margin: 16,
     backgroundColor: "white",
     borderWidth: 3,
-    borderColor: "#1F6228",
+    borderColor: MyLightTheme.colors.greenDark,
   },
   btnBack: {
     left: 0,

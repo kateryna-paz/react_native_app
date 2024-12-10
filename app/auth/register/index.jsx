@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { TextInput, Button, ActivityIndicator, Icon } from "react-native-paper";
+import {
+  TextInput,
+  Button,
+  ActivityIndicator,
+  Icon,
+  useTheme,
+} from "react-native-paper";
 import BackButton from "../../../components/UI/BackButton";
 import { useDispatch, useSelector } from "react-redux";
 import { setRegisterUserData } from "../../../store/slices/authSlice";
 import MyContainer from "../../../components/UI/MyContainer";
+import { MyLightTheme } from "../../../assets/theme/global";
+import LoadingScreen from "../../../components/UI/LoadingScreen";
 
 const validateEmail = (email) => {
   return String(email)
@@ -16,6 +24,7 @@ const validateEmail = (email) => {
 };
 
 export default function RegisterScreen() {
+  const theme = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -51,20 +60,22 @@ export default function RegisterScreen() {
 
   if (isLoading) {
     return (
-      <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
-        <ActivityIndicator
-          size={60}
-          color="#360a70"
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        />
-      </MyContainer>
+      <LoadingScreen
+        colorStart={theme.colors.primaryDark}
+        colorEnd={theme.colors.primaryLight}
+        indicatorColor={theme.colors.white}
+      />
     );
   }
 
   return (
-    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+    <MyContainer
+      colorStart={theme.colors.primaryDark}
+      colorEnd={theme.colors.primaryLight}
+    >
       <BackButton
         stylesBtn={styles.backButton}
+        iconColor={theme.colors.white}
         onPress={() => router.push("/auth")}
       />
       <View style={styles.form}>
@@ -119,10 +130,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 20,
     left: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.primaryDark,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: "#672ab7",
+    borderColor: MyLightTheme.colors.white,
   },
   form: {
     flex: 1,
@@ -134,6 +145,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginBottom: 20,
     fontFamily: "Kurale",
+    color: "#fff",
   },
   input: {
     width: "100%",

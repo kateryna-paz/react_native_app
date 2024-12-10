@@ -5,11 +5,12 @@ import { FontProvider, useFontsLoaded } from "../context/fontsContext";
 import { PaperProvider } from "react-native-paper";
 import { useEffect } from "react";
 import { initializeAuth } from "../store/slices/authSlice";
+import { MyLightTheme } from "../assets/theme/global";
 
 export default function Layout() {
   return (
     <Provider store={store}>
-      <PaperProvider>
+      <PaperProvider theme={MyLightTheme}>
         <FontProvider>
           <MainLayout />
         </FontProvider>

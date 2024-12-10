@@ -2,13 +2,13 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../services/axiosConfig";
 
 const initialState = {
-  panels: [],
+  panels: null,
   registerPanel: {
     square: 0,
     number: 0,
     typeId: null,
   },
-  isLoaded: false,
+  isLoading: false,
   error: null,
 };
 
@@ -21,7 +21,7 @@ export const fetchPanels = createAsyncThunk(
 
       if (!userId) {
         return rejectWithValue(
-          " Помилка при отриманні даних, користувач не визначений."
+          "Помилка при отриманні даних, користувач не визначений."
         );
       }
       const response = await axiosInstance.get(`/panels/userId/${userId}`);
@@ -42,7 +42,7 @@ export const fetchPanels = createAsyncThunk(
 
       return transformedData;
     } catch (error) {
-      return rejectWithValue(" Помилка при отриманні даних: " + error);
+      return rejectWithValue("Помилка при отриманні даних: " + error);
     }
   }
 );
@@ -98,7 +98,7 @@ export const addPanel = createAsyncThunk(
       return transformedData;
     } catch (error) {
       return rejectWithValue(
-        " Помилка при додаванні нової панелі " + error.message
+        "Помилка при додаванні нової панелі " + error.message
       );
     }
   }
@@ -109,10 +109,9 @@ export const deletePanel = createAsyncThunk(
   async ({ id }, { rejectWithValue }) => {
     try {
       await axiosInstance.delete(`/panels/${id}`);
-      console.log(id);
       return id;
     } catch (error) {
-      return rejectWithValue("Помилка при видаленні панелі" + error);
+      return rejectWithValue("Помилка при видаленні панелі " + error);
     }
   }
 );
@@ -128,7 +127,7 @@ const panelSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(changePanel.pending, (state) => {
-        state.isLoaded = false;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(changePanel.fulfilled, (state, action) => {
@@ -142,51 +141,50 @@ const panelSlice = createSlice({
             ...updatedPanel,
           };
         }
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = null;
       })
       .addCase(changePanel.rejected, (state, action) => {
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = action.payload;
       })
       .addCase(fetchPanels.pending, (state) => {
-        state.isLoaded = false;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchPanels.fulfilled, (state, action) => {
         state.panels = action.payload;
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = null;
       })
       .addCase(fetchPanels.rejected, (state, action) => {
         state.error = action.payload;
-        state.isLoaded = false;
+        state.isLoading = false;
       })
       .addCase(deletePanel.pending, (state) => {
-        state.isLoaded = false;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(deletePanel.fulfilled, (state, action) => {
         state.panels = state.panels.filter(
           (panel) => panel.id !== action.payload
         );
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = null;
       })
       .addCase(deletePanel.rejected, (state, action) => {
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = action.payload;
       })
       .addCase(addPanel.pending, (state) => {
-        state.isLoaded = false;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(addPanel.fulfilled, (state, action) => {
-        state.error = null;
         const newPanel = {
           id: action.payload.id,
-          typeId: action.payload.typeId.id,
-          type: action.payload.typeId.type,
+          typeId: action.payload.typeId,
+          type: action.payload.type,
           square: action.payload.square,
           number: action.payload.number,
         };
@@ -196,10 +194,10 @@ const panelSlice = createSlice({
           typeId: null,
         };
         state.panels.push(newPanel);
-        state.isLoaded = true;
+        state.isLoading = false;
       })
       .addCase(addPanel.rejected, (state, action) => {
-        state.isLoaded = true;
+        state.isLoading = false;
         state.error = action.payload;
       });
   },

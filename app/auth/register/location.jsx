@@ -10,11 +10,14 @@ import {
   setPermission,
   setRegisterLocationWithGeo,
 } from "../../../store/slices/locationAndMapSlice";
-import { ActivityIndicator, Icon } from "react-native-paper";
+import { ActivityIndicator, Icon, useTheme } from "react-native-paper";
 import { registerUser } from "../../../store/slices/authSlice";
 import { addPanel } from "../../../store/slices/panelSlice";
+import { MyLightTheme } from "../../../assets/theme/global";
+import LoadingScreen from "../../../components/UI/LoadingScreen";
 
 export default function LocationScreen() {
+  const theme = useTheme();
   const router = useRouter();
   const dispatch = useDispatch();
   const { permission, registerLocation, isLoading } = useSelector(
@@ -25,9 +28,12 @@ export default function LocationScreen() {
     isLoading: userLoading,
     error: userError,
   } = useSelector((state) => state.auth);
-  const { panels, registerPanel, isLoaded, error } = useSelector(
-    (state) => state.panel
-  );
+  const {
+    panels,
+    registerPanel,
+    isLoading: isPanelLoading,
+    error,
+  } = useSelector((state) => state.panel);
   const [location, setLocation] = useState(null);
 
   const handleRegister = async () => {
@@ -79,7 +85,9 @@ export default function LocationScreen() {
 
   const renderLocationStatus = () => {
     if (isLoading) {
-      return <ActivityIndicator size="small" color="#360a70" />;
+      return (
+        <ActivityIndicator size="small" color={theme.colors.primaryDark} />
+      );
     }
 
     if (location?.regionName) {
@@ -99,24 +107,21 @@ export default function LocationScreen() {
     );
   };
 
-  if (userLoading || isLoading) {
+  if (userLoading || isLoading || isPanelLoading) {
     return (
-      <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
-        <ActivityIndicator
-          size={60}
-          color="#360a70"
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        />
-      </MyContainer>
+      <LoadingScreen
+        colorStart={theme.colors.ptimaryDark}
+        colorEnd={theme.colors.ptimaryLight}
+        indicatorColor={theme.colors.white}
+      />
     );
   }
 
   return (
-    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+    <MyContainer
+      colorStart={theme.colors.primaryDark}
+      colorEnd={theme.colors.primaryLight}
+    >
       <View style={styles.container}>
         <Text style={styles.title}>Останній крок!</Text>
         <Text style={styles.subtitle}>
@@ -145,7 +150,7 @@ export default function LocationScreen() {
             <MaterialCommunityIcons
               name="arrow-left-thin"
               size={24}
-              color="#672ab7"
+              color={theme.colors.primary}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -167,11 +172,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   locationContainer: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.background,
     padding: 14,
     borderRadius: 8,
     marginBottom: 25,
-    shadowColor: "#000",
+    shadowColor: "black",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
@@ -182,13 +187,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: "Kurale",
     textAlign: "center",
+    color: "white",
   },
   subtitle: {
     fontSize: 20,
     marginBottom: 20,
     marginHorizontal: 18,
     fontFamily: "Kurale",
-    color: "#333",
+    color: MyLightTheme.colors.background,
     textAlign: "center",
   },
   buttonContainer: {
@@ -208,16 +214,16 @@ const styles = StyleSheet.create({
   backButton: {
     width: "20%",
     borderWidth: 2,
-    borderColor: "#672ab7",
-    backgroundColor: "#f5f5f5",
+    borderColor: MyLightTheme.colors.primary,
+    backgroundColor: MyLightTheme.colors.background,
   },
   nextButton: {
     width: "70%",
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
   },
   buttonText: {
     fontSize: 18,
-    color: "#fff",
+    color: "white",
     fontFamily: "Kurale",
     lineHeight: 24,
   },

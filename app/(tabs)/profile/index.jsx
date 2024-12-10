@@ -5,10 +5,12 @@ import PanelsInfoSection from "../../../components/profile/PanelsInfoSection";
 import LogoutButton from "../../../components/UI/LogoutButton";
 import { useDispatch, useSelector } from "react-redux";
 import ErrorText from "../../../components/UI/ErrorText";
-import { ActivityIndicator } from "react-native-paper";
+import { ActivityIndicator, useTheme } from "react-native-paper";
 import MyContainer from "../../../components/UI/MyContainer";
+import LoadingScreen from "../../../components/UI/LoadingScreen";
 
 export default function ProfileScreen() {
+  const theme = useTheme();
   const {
     user,
     isLoading,
@@ -19,14 +21,19 @@ export default function ProfileScreen() {
     return <ErrorText error={userError} />;
   }
   if (isLoading) {
-    <ActivityIndicator
-      size={60}
-      color="#360a70"
-      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-    />;
+    return (
+      <LoadingScreen
+        colorStart={theme.colors.secondaryDark}
+        colorEnd={theme.colors.secondaryLight}
+        indicatorColor={theme.colors.white}
+      />
+    );
   }
   return (
-    <MyContainer backgroundImage={require("../../../assets/bg2.jpg")}>
+    <MyContainer
+      colorStart={theme.colors.secondaryDark}
+      colorEnd={theme.colors.secondaryLight}
+    >
       <ScrollView contentContainerStyle={styles.container}>
         <LogoutButton
           styles={{
@@ -35,7 +42,7 @@ export default function ProfileScreen() {
             right: 10,
             borderWidth: 2,
             zIndex: 10,
-            borderColor: "#ba0b0b",
+            borderColor: theme.colors.red,
           }}
         />
         <UserInfoSection user={user} />
@@ -48,7 +55,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
+    paddingHorizontal: 16,
     paddingBottom: 100,
   },
 });

@@ -19,7 +19,7 @@ const getRegionName = async (latitude, longitude) => {
   }
 
   const { region } = address[0] || {};
-  return regionsUkr[region] || region || "Невідома область";
+  return regionsUkr[region] || null;
 };
 
 export const getLocationWithGeo = createAsyncThunk(
@@ -85,11 +85,18 @@ export const getLocationWithGeo = createAsyncThunk(
 
 export const setCoordinatesAndFetchAddress = createAsyncThunk(
   "locationAndMap/setCoordinatesAndFetchAddress",
-  async ({ latitude, longitude }, { rejectWithValue, getState }) => {
+  async (
+    { latitude, longitude, regionName },
+    { rejectWithValue, getState }
+  ) => {
     try {
-      const regionInUkrainian = await getRegionName(latitude, longitude);
+      if (!regionName) {
+        return rejectWithValue(
+          " Не вдалося визначити область для заданих координат."
+        );
+      }
 
-      console.log(regionInUkrainian);
+      console.log(regionName);
 
       const state = getState();
       const userId = state.auth.user?.id;
@@ -107,13 +114,13 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
         location = await axiosInstance.put(`/locations/${loc.data.id}`, {
           userId,
           coordinates: [latitude, longitude],
-          regionName: regionInUkrainian,
+          regionName: regionName,
         });
       } else {
         location = await axiosInstance.post(`/locations`, {
           userId,
           coordinates: [latitude, longitude],
-          regionName: regionInUkrainian,
+          regionName: regionName,
           dailyEnergyProduced: [],
         });
       }
@@ -129,11 +136,9 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
         yearlyInsolation: location.data.regionId.yearlyInsolation,
       };
 
-      console.log(transformedData);
-
       return transformedData;
     } catch (error) {
-      return rejectWithValue("Помилка при визначенні адреси. " + error);
+      return rejectWithValue(" Помилка при визначенні адреси. " + error);
     }
   }
 );
@@ -171,8 +176,6 @@ export const addLocation = createAsyncThunk(
         yearlyInsolation: location.data.regionId.yearlyInsolation,
       };
 
-      console.log(transformedData);
-
       return transformedData;
     } catch (error) {
       return rejectWithValue(
@@ -184,9 +187,12 @@ export const addLocation = createAsyncThunk(
 
 export const setMapMarkerCoordinates = createAsyncThunk(
   "locationAndMap/setMapMarkerCoordinates",
-  async ({ latitude, longitude }, { rejectWithValue }) => {
+  async (
+    { latitude, longitude, latitudeDelta, longitudeDelta },
+    { rejectWithValue }
+  ) => {
     try {
-      return { latitude, longitude };
+      return { latitude, longitude, latitudeDelta, longitudeDelta };
     } catch (error) {
       return rejectWithValue("Помилка при визначенні локації. " + error);
     }
@@ -276,11 +282,9 @@ export const setRegisterLocationWithGeo = createAsyncThunk(
 
 export const setRegisterLocationWithMap = createAsyncThunk(
   "location/setRegisterLocationWithMap",
-  async ({ latitude, longitude }, { rejectWithValue }) => {
+  async ({ latitude, longitude, regionName }, { rejectWithValue }) => {
     try {
-      const regionInUkrainian = await getRegionName(latitude, longitude);
-
-      return { latitude, longitude, regionName: regionInUkrainian };
+      return { latitude, longitude, regionName };
     } catch (error) {
       return rejectWithValue(
         "Сталася помилка при визначенні місцезнаходження."
@@ -293,12 +297,7 @@ const locationAndMapSlice = createSlice({
   name: "locationAndMap",
   initialState: {
     location: null,
-    markerCoords: {
-      latitude: 48.5336,
-      longitude: 32.6369,
-      latitudeDelta: 25,
-      longitudeDelta: 25,
-    },
+    markerCoords: null,
     registerLocation: null,
     permission: false,
     isLoading: false,
@@ -376,6 +375,8 @@ const locationAndMapSlice = createSlice({
         state.markerCoords = {
           latitude: action.payload.latitude,
           longitude: action.payload.longitude,
+          lattitudeDelta: 20,
+          longitudeDelta: 20,
         };
         state.error = null;
       })
@@ -390,7 +391,11 @@ const locationAndMapSlice = createSlice({
       })
       .addCase(setMapMarkerCoordinates.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.markerCoords = { ...action.payload };
+        state.markerCoords = {
+          ...action.payload,
+          latitudeDelta: action.payload.latitudeDelta || 10,
+          longitudeDelta: action.payload.longitudeDelta || 10,
+        };
         state.error = null;
       })
       .addCase(setMapMarkerCoordinates.rejected, (state, action) => {

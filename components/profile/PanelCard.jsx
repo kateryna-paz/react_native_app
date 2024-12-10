@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, Alert } from "react-native";
-import { IconButton, TextInput } from "react-native-paper";
+import { IconButton, TextInput, useTheme } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { fetchPanelTypes } from "../../store/slices/typesSlice";
 import { changePanel, deletePanel } from "../../store/slices/panelSlice";
@@ -24,6 +24,8 @@ export default function PanelCard({
   });
   const [reductOpen, setReductOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  const theme = useTheme();
 
   const dispatch = useDispatch();
 
@@ -94,7 +96,7 @@ export default function PanelCard({
         />
       )}
       <LinearGradient
-        colors={["#2EB84E", "#1f6228"]}
+        colors={[theme.colors.green, theme.colors.greenDark]}
         style={{
           position: "absolute",
           left: 0,
@@ -126,8 +128,12 @@ export default function PanelCard({
           icon={"pencil"}
           mode="outlined"
           size={20}
-          iconColor="#83CFFF"
-          style={{ borderRadius: 10, borderWidth: 2, borderColor: "#83CFFF" }}
+          iconColor={theme.colors.secondary}
+          style={{
+            borderRadius: 10,
+            borderWidth: 2,
+            borderColor: theme.colors.secondary,
+          }}
           onPress={handleReductPanel}
         />
 

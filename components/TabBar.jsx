@@ -7,8 +7,10 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { usePathname } from "expo-router";
+import { useTheme } from "react-native-paper";
 
 export default function MyTabBar({ state, descriptors, navigation }) {
+  const theme = useTheme();
   const currentPath = usePathname();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -72,7 +74,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
           animatedStyle,
           {
             position: "absolute",
-            backgroundColor: "#672ab7",
+            backgroundColor: theme.colors.primary,
             marginHorizontal: 14,
             borderRadius: 30,
             height: dimensions.height - 16,
@@ -132,7 +134,8 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
 });

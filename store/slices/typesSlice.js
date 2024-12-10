@@ -3,7 +3,7 @@ import axiosInstance from "../../services/axiosConfig";
 
 const initialState = {
   panelTypes: null,
-  isTypesLoaded: false,
+  isTypesLoading: false,
   errorTypes: null,
 };
 
@@ -27,17 +27,17 @@ const typesSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchPanelTypes.pending, (state) => {
-        state.isTypesLoaded = false;
+        state.isTypesLoading = true;
         state.errorTypes = null;
       })
       .addCase(fetchPanelTypes.fulfilled, (state, action) => {
         state.panelTypes = action.payload;
-        state.isTypesLoaded = true;
+        state.isTypesLoading = false;
         state.errorTypes = null;
       })
       .addCase(fetchPanelTypes.rejected, (state, action) => {
         state.errorTypes = action.payload;
-        state.isTypesLoaded = false;
+        state.isTypesLoading = false;
       });
   },
 });
