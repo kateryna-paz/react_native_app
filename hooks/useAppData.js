@@ -4,14 +4,18 @@ import {
   fetchLocation,
   setPermission,
 } from "../store/slices/locationAndMapSlice";
-import { useEffect } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { fetchPanelTypes } from "../store/slices/typesSlice";
 import { fetchWeather } from "../store/slices/weatherSlice";
 import { fetchPanels } from "../store/slices/panelSlice";
 
 export const useAppData = () => {
   const dispatch = useDispatch();
-  const { user, isLoading, error } = useSelector((state) => state.auth);
+  const {
+    user,
+    isLoading: isUserLoading,
+    error,
+  } = useSelector((state) => state.auth);
   const {
     location,
     permission,
@@ -33,36 +37,45 @@ export const useAppData = () => {
     error: weatherError,
   } = useSelector((state) => state.weather);
 
-  useEffect(() => {
-    if (!permission) {
-      dispatch(setPermission());
-    }
-    if (!location) {
-      dispatch(fetchLocation());
-    }
+  const reloadData = useCallback(async () => {
+    try {
+      if (!permission) {
+        dispatch(setPermission());
+      }
+      if (!location) dispatch(fetchLocation());
 
-    if (!panelTypes) {
       dispatch(fetchPanelTypes());
-    }
 
-    if (!panels && user?.id) {
-      dispatch(fetchPanels());
-    }
-  }, [user?.id, panels, location, panelTypes]);
+      if (user?.id) {
+        dispatch(fetchPanels());
+      }
 
-  useEffect(() => {
-    const updateWeather = () => {
       if (location) {
         dispatch(fetchWeather());
       }
-    };
+    } catch (error) {
+      console.error("Error reloading app data:", error);
+    }
+  }, [location, permission, user?.id]);
 
-    updateWeather();
+  useEffect(() => {
+    if (!permission) dispatch(setPermission());
+  }, [permission]);
 
-    const interval = setInterval(updateWeather, 12 * 60 * 60 * 1000);
+  useEffect(() => {
+    if (!location) dispatch(fetchLocation());
+  }, [location]);
 
-    return () => clearInterval(interval);
-  }, [dispatch, location]);
+  useEffect(() => {
+    if (!panelTypes) dispatch(fetchPanelTypes());
+    if (!panels && user?.id) dispatch(fetchPanels());
+  }, [panelTypes, user?.id, panels]);
+
+  useEffect(() => {
+    if (!location) dispatch(fetchLocation());
+
+    if (!weatherData) dispatch(fetchWeather());
+  }, [weatherData, location]);
 
   return {
     user,
@@ -71,11 +84,12 @@ export const useAppData = () => {
     panels,
     panelTypes,
     isLoading:
-      isLoading ||
+      isUserLoading ||
       isLocationLoading ||
       isPanelsLoading ||
       isTypesLoading ||
       isWeatherLoading,
     error: error || locationError || panelsError || typesError || weatherError,
+    reloadData,
   };
 };

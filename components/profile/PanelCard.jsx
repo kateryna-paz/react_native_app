@@ -1,29 +1,29 @@
-import React, { useEffect } from "react";
 import { View, Text, Alert } from "react-native";
 import { IconButton, TextInput, useTheme } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { fetchPanelTypes } from "../../store/slices/typesSlice";
 import { changePanel, deletePanel } from "../../store/slices/panelSlice";
 import { useSelector, useDispatch } from "react-redux";
-import PanelDialog from "../UI/PanelDialog";
+import DialogCreation from "../UI/DialogCreation";
 import DeletePanelDialog from "../UI/DeletePanelDialog";
+import { useState } from "react";
+import ReductPanelCard from "./ReductCardPanel";
 
 export default function PanelCard({
   id,
-  square,
+  power,
   number,
   typeId,
   type,
   refresh,
   panelTypes,
 }) {
-  const [panelData, setPanelData] = React.useState({
-    square: square || 0,
+  const [panelData, setPanelData] = useState({
+    power: power || 0,
     number: number || 0,
     typeId: typeId || null,
   });
-  const [reductOpen, setReductOpen] = React.useState(false);
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [reductOpen, setReductOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const theme = useTheme();
 
@@ -37,7 +37,7 @@ export default function PanelCard({
   };
 
   const handleSaveChanges = () => {
-    if (panelData.square <= 0 || panelData.number <= 0 || !panelData.typeId) {
+    if (panelData.power <= 0 || panelData.number <= 0 || !panelData.typeId) {
       Alert.alert("Введіть коректні значення площі та кількості панелей.");
       return;
     }
@@ -51,9 +51,9 @@ export default function PanelCard({
     refresh();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     console.log(id);
-    dispatch(deletePanel({ id }))
+    await dispatch(deletePanel({ id }))
       .unwrap()
       .then(() => Alert.alert("Панель успішно видалена"))
       .catch(() => Alert.alert("Помилка при видаленні панелі"));
@@ -76,15 +76,18 @@ export default function PanelCard({
       }}
     >
       {reductOpen && (
-        <PanelDialog
+        <DialogCreation
           visible={reductOpen}
           hideDialog={() => setReductOpen(false)}
           saveChanges={handleSaveChanges}
-          panelData={panelData}
-          setPanelData={setPanelData}
-          panelTypes={panelTypes}
           title={"Редагування панелі"}
-        />
+        >
+          <ReductPanelCard
+            panelTypes={panelTypes}
+            panelData={panelData}
+            setPanelData={setPanelData}
+          />
+        </DialogCreation>
       )}
       {deleteOpen && (
         <DeletePanelDialog
@@ -141,8 +144,12 @@ export default function PanelCard({
           icon={"delete"}
           mode="outlined"
           size={20}
-          iconColor="#00120B"
-          style={{ borderRadius: 10, borderWidth: 2, borderColor: "#00120B" }}
+          iconColor={theme.colors.primary}
+          style={{
+            borderRadius: 10,
+            borderWidth: 2,
+            borderColor: theme.colors.primary,
+          }}
           onPress={handleDeleteDialog}
         />
       </View>
@@ -171,7 +178,7 @@ export default function PanelCard({
               lineHeight: 40,
             }}
           >
-            {square} м²
+            {power} Вт
           </Text>
           <Text
             style={{
@@ -181,7 +188,7 @@ export default function PanelCard({
               color: "white",
             }}
           >
-            Площа 1 панелі
+            Потужність
           </Text>
         </View>
 

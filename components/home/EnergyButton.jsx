@@ -55,12 +55,12 @@ const useButtonBorderAnimation = (theme) => {
       Animated.sequence([
         Animated.timing(buttonBorder, {
           toValue: 1,
-          duration: 1000,
+          duration: 1200,
           useNativeDriver: true,
         }),
         Animated.timing(buttonBorder, {
           toValue: 0,
-          duration: 1000,
+          duration: 1200,
           useNativeDriver: true,
         }),
       ])
@@ -72,7 +72,7 @@ const useButtonBorderAnimation = (theme) => {
 
   const borderColorInterpolation = buttonBorder.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.blue, theme.colors.primary],
+    outputRange: [theme.colors.green, theme.colors.primary],
   });
 
   return { borderColorInterpolation };

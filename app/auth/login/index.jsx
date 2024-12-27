@@ -52,9 +52,7 @@ export default function Login() {
 
       if (loginUser.rejected.match(resultAction)) {
         Alert.alert("Невірна електронна пошта або пароль");
-        console.error("Помилка входу в акаунт:", resultAction.payload);
       } else {
-        Alert.alert("Вхід успішний!", "Раді вас бачити знов у SolarManager");
         router.push("/profile");
       }
     } catch (err) {

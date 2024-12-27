@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import MyContainer from "../../../components/UI/MyContainer";
 import { useRouter } from "expo-router";
@@ -20,6 +20,9 @@ export default function LocationScreen() {
   const theme = useTheme();
   const router = useRouter();
   const dispatch = useDispatch();
+
+  const [localIsLoading, setLocalIsLoading] = useState(false);
+
   const { permission, registerLocation, isLoading } = useSelector(
     (state) => state.location
   );
@@ -37,27 +40,30 @@ export default function LocationScreen() {
   const [location, setLocation] = useState(null);
 
   const handleRegister = async () => {
+    setLocalIsLoading(true);
     try {
       const userResult = await dispatch(registerUser()).unwrap();
-      if (!userResult || userResult.error) {
+      if (!userResult || userResult?.error) {
         throw new Error("User registration failed.");
       }
 
       const panelResult = await dispatch(
         addPanel({ ...registerPanel })
       ).unwrap();
-      if (!panelResult || panelResult.error) {
+      if (!panelResult || panelResult?.error) {
         throw new Error("Panel creation failed.");
       }
 
       const locationResult = await dispatch(addLocation()).unwrap();
-      if (!locationResult || locationResult.error) {
+      if (!locationResult || locationResult?.error) {
         throw new Error("Location registration failed.");
       }
 
       router.push("/profile");
     } catch (err) {
-      Alert.alert("Error", err || "Something went wrong during registration!");
+      Alert.alert("Помилка", err || "Щось пішло не так");
+    } finally {
+      setLocalIsLoading(false);
     }
   };
 
@@ -70,7 +76,7 @@ export default function LocationScreen() {
         `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.regionName}`
       );
     } catch (err) {
-      Alert.alert("Помилка", err);
+      Alert.alert("Помилка", err || "Щось пішло не так");
     }
   };
 
@@ -107,11 +113,11 @@ export default function LocationScreen() {
     );
   };
 
-  if (userLoading || isLoading || isPanelLoading) {
+  if (localIsLoading) {
     return (
       <LoadingScreen
-        colorStart={theme.colors.ptimaryDark}
-        colorEnd={theme.colors.ptimaryLight}
+        colorStart={theme.colors.primaryDark}
+        colorEnd={theme.colors.primaryLight}
         indicatorColor={theme.colors.white}
       />
     );
@@ -134,6 +140,7 @@ export default function LocationScreen() {
               router.push({
                 pathname: "/auth/register/map",
                 params: {
+                  // ???
                   onSaveLocation: () => dispatch(setRegisterLocationWithGeo()),
                 },
               })

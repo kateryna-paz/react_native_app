@@ -1,36 +1,39 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Button, Dialog, Portal } from "react-native-paper";
+import { importances } from "../../constants/importanceDevices";
 
-export default function DeletePanelDialog({
+export default function DeleteDeviceDialog({
   visible,
   hideDialog,
-  panelData,
-  deletePanel,
-  panelTypes,
+  deviceData,
+  deleteDevice,
 }) {
-  const type = panelTypes.find((t) => t.id === panelData.typeId);
+  const type = importances.find((imp) => imp.id === deviceData.importanceId);
 
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={hideDialog} style={styles.dialog}>
-        <Dialog.Title style={styles.dialogTitle}>Видалення панелі</Dialog.Title>
+        <Dialog.Title style={styles.dialogTitle}>
+          Видалення приладу
+        </Dialog.Title>
         <Dialog.Content>
           <Text style={styles.dialogText}>
-            Ви дійсно хочете видалити інформацію про цю панель?
+            Ви дійсно хочете видалити інформацію про цей прилад?
+          </Text>
+          <Text style={styles.deviceInfo}>
+            Назва приладу:{" "}
+            <Text style={styles.boldText}>{deviceData.name}</Text>
           </Text>
 
-          <Text style={styles.panelInfo}>
-            Тип панелі:{" "}
-            <Text style={styles.boldText}>{type?.type || "Невідомий тип"}</Text>
+          <Text style={styles.deviceInfo}>
+            Важливість при розподіленні:{" "}
+            <Text style={styles.boldText}>{type?.type || "Невідомо"}</Text>
           </Text>
-          <Text style={styles.panelInfo}>
+
+          <Text style={styles.deviceInfo}>
             Потужність:{" "}
-            <Text style={styles.boldText}>{panelData.power} Вт</Text>
-          </Text>
-          <Text style={styles.panelInfo}>
-            Кількість панелей:{" "}
-            <Text style={styles.boldText}>{panelData.number}</Text>
+            <Text style={styles.boldText}>{deviceData.power} Вт</Text>
           </Text>
         </Dialog.Content>
         <Dialog.Actions>
@@ -39,7 +42,7 @@ export default function DeletePanelDialog({
           </Button>
           <Button
             mode="contained"
-            onPress={deletePanel}
+            onPress={deleteDevice}
             style={styles.deleteButton}
           >
             Так
@@ -67,7 +70,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
   },
-  panelInfo: {
+  deviceInfo: {
     fontFamily: "Marmelad",
     fontSize: 16,
     color: "#555",

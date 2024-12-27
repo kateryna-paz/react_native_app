@@ -9,9 +9,10 @@ import {
   useTheme,
 } from "react-native-paper";
 import { addPanel, fetchPanels } from "../../store/slices/panelSlice";
-import PanelDialog from "../UI/PanelDialog";
+import DialogCreation from "../UI/DialogCreation";
 import { fetchPanelTypes } from "../../store/slices/typesSlice";
 import ErrorText from "../UI/ErrorText";
+import ReductPanelCard from "./ReductCardPanel";
 
 export default function PanelsInfoSection({ user }) {
   const dispatch = useDispatch();
@@ -25,7 +26,7 @@ export default function PanelsInfoSection({ user }) {
   );
 
   const [panelData, setPanelData] = useState({
-    square: 0,
+    power: 0,
     number: 0,
     typeId: null,
   });
@@ -34,10 +35,10 @@ export default function PanelsInfoSection({ user }) {
   const [openAddDialog, setOpenAddDialog] = useState(false);
 
   const handleAddPanel = async () => {
-    if (panelData.square <= 0 || panelData.number <= 0 || !panelData.typeId) {
+    if (panelData.power <= 0 || panelData.number <= 0 || !panelData.typeId) {
       Alert.alert(
         "Помилка створення нової панелі",
-        "Будь ласка, оберіть тип панелей, введіть площу 1 панелі (у м²) та кількість таких панелей."
+        "Будь ласка, оберіть тип панелей, введіть потужність 1 панелі (у Вт) та кількість таких панелей."
       );
       return;
     }
@@ -48,7 +49,7 @@ export default function PanelsInfoSection({ user }) {
         Alert.alert("Упс... Сталася помилка при відправленні даних.", `${err}`)
       );
 
-    setPanelData({ square: 0, number: 0, typeId: null });
+    setPanelData({ power: 0, number: 0, typeId: null });
     setOpenAddDialog(false);
     await refresh();
   };
@@ -97,7 +98,7 @@ export default function PanelsInfoSection({ user }) {
             <PanelCard
               key={panel.id}
               id={panel.id}
-              square={panel.square}
+              power={panel.power}
               number={panel.number}
               typeId={panel.typeId}
               type={panel.type}
@@ -105,7 +106,7 @@ export default function PanelsInfoSection({ user }) {
               refresh={refresh}
             />
           ))}
-        {panels && !errorTypes && !isTypesLoading && (
+        {panels && !errorTypes && (
           <IconButton
             icon="plus"
             mode="contained"
@@ -118,15 +119,18 @@ export default function PanelsInfoSection({ user }) {
             }}
           />
         )}
-        <PanelDialog
+        <DialogCreation
           visible={openAddDialog}
           hideDialog={() => setOpenAddDialog(false)}
           saveChanges={handleAddPanel}
-          panelData={panelData}
-          setPanelData={setPanelData}
-          panelTypes={panelTypes}
           title="Додати нову панель"
-        />
+        >
+          <ReductPanelCard
+            panelTypes={panelTypes}
+            panelData={panelData}
+            setPanelData={setPanelData}
+          />
+        </DialogCreation>
       </View>
     </View>
   );

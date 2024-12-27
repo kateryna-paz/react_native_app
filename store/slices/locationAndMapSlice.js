@@ -3,7 +3,7 @@ import * as Location from "expo-location";
 import { regionsUkr } from "../../constants/ukrainianRegions";
 import axiosInstance from "../../services/axiosConfig";
 
-const getRegionName = async (latitude, longitude) => {
+export const getRegionName = async (latitude, longitude) => {
   if (
     latitude >= 44.3864 &&
     latitude <= 46.1927 &&
@@ -32,6 +32,7 @@ export const getLocationWithGeo = createAsyncThunk(
       }
 
       const { coords } = await Location.getCurrentPositionAsync();
+
       const { latitude, longitude } = coords;
 
       const regionInUkrainian = await getRegionName(latitude, longitude);
@@ -48,7 +49,7 @@ export const getLocationWithGeo = createAsyncThunk(
 
       let location;
 
-      if (loc.data?.id) {
+      if (loc?.data?.id) {
         location = await axiosInstance.put(`/locations/${loc.data.id}`, {
           userId,
           coordinates: [latitude, longitude],
@@ -74,8 +75,6 @@ export const getLocationWithGeo = createAsyncThunk(
         yearlyInsolation: location.data.regionId.yearlyInsolation,
       };
 
-      console.log(transformedData);
-
       return transformedData;
     } catch (error) {
       return rejectWithValue("Сталася помилка при отриманні місцезнаходження.");
@@ -96,8 +95,6 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
         );
       }
 
-      console.log(regionName);
-
       const state = getState();
       const userId = state.auth.user?.id;
 
@@ -110,18 +107,18 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
 
       let location;
 
-      if (loc.data.id) {
-        location = await axiosInstance.put(`/locations/${loc.data.id}`, {
-          userId,
-          coordinates: [latitude, longitude],
-          regionName: regionName,
-        });
-      } else {
+      if (!loc || !loc.data || !loc.data.id) {
         location = await axiosInstance.post(`/locations`, {
           userId,
           coordinates: [latitude, longitude],
           regionName: regionName,
           dailyEnergyProduced: [],
+        });
+      } else if (loc.data.id) {
+        location = await axiosInstance.put(`/locations/${loc.data.id}`, {
+          userId,
+          coordinates: [latitude, longitude],
+          regionName: regionName,
         });
       }
 
@@ -151,6 +148,8 @@ export const addLocation = createAsyncThunk(
       const userId = state.auth.user?.id;
 
       const loc = state.location.registerLocation;
+
+      console.log("location in addLocation: " + loc);
 
       if (!userId) {
         return rejectWithValue(
@@ -205,7 +204,6 @@ export const setPermission = createAsyncThunk(
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
-      console.log("status " + status);
       if (status === "granted") {
         return true;
       } else {
@@ -235,7 +233,9 @@ export const fetchLocation = createAsyncThunk(
       }
       const loc = await axiosInstance.get(`/locations/userId/${userId}`);
 
-      if (!loc.data) {
+      console.log("loc: " + loc);
+
+      if (!loc || !loc.data || !loc.data.id) {
         return null;
       }
 
@@ -303,7 +303,13 @@ const locationAndMapSlice = createSlice({
     isLoading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    clearData(state) {
+      state.error = null;
+      state.location = null;
+      state.markerCoords = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(addLocation.fulfilled, (state, action) => {
@@ -336,7 +342,7 @@ const locationAndMapSlice = createSlice({
       .addCase(setRegisterLocationWithMap.fulfilled, (state, action) => {
         state.isLoading = false;
         state.registerLocation = { ...action.payload };
-        console.log(state.registerLocation);
+
         state.error = null;
       })
       .addCase(getLocationWithGeo.pending, (state) => {
@@ -417,5 +423,7 @@ const locationAndMapSlice = createSlice({
       });
   },
 });
+
+export const { clearData } = locationAndMapSlice.actions;
 
 export default locationAndMapSlice.reducer;

@@ -3,12 +3,21 @@ import { View, Text, StyleSheet } from "react-native";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-export default function SelectList({ title, items, selectedTypeId, onSelect }) {
+export default function SelectList({
+  title,
+  items,
+  selectedTypeId,
+  onSelect,
+  style,
+  textStyle,
+  arrowStyle,
+}) {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     if (Array.isArray(items) && selectedTypeId) {
       const initialItem = items.find((item) => item.id === selectedTypeId);
+
       if (initialItem) {
         setSelectedItem(initialItem);
       }
@@ -24,13 +33,13 @@ export default function SelectList({ title, items, selectedTypeId, onSelect }) {
       }}
       renderButton={(currentSelectedItem, isOpened) => {
         return (
-          <View style={styles.dropdownButtonStyle}>
-            <Text style={styles.dropdownButtonTxtStyle}>
+          <View style={[styles.dropdownButtonStyle, style]}>
+            <Text style={[styles.dropdownButtonTxtStyle, textStyle]}>
               {currentSelectedItem?.type || selectedItem?.type || title}
             </Text>
             <Icon
               name={isOpened ? "chevron-up" : "chevron-down"}
-              style={styles.dropdownButtonArrowStyle}
+              style={[styles.dropdownButtonArrowStyle, arrowStyle]}
             />
           </View>
         );
@@ -45,7 +54,9 @@ export default function SelectList({ title, items, selectedTypeId, onSelect }) {
               }),
             }}
           >
-            <Text style={styles.dropdownItemTxtStyle}>{item.type}</Text>
+            <Text style={[styles.dropdownButtonTxtStyle, textStyle]}>
+              {item.type}
+            </Text>
           </View>
         );
       }}
@@ -60,7 +71,6 @@ const styles = StyleSheet.create({
     width: "auto",
     height: 44,
     backgroundColor: "#672ab7",
-
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
@@ -88,11 +98,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 8,
-  },
-  dropdownItemTxtStyle: {
-    flex: 1,
-    color: "white",
-    fontFamily: "Kurale",
-    fontSize: 16,
   },
 });

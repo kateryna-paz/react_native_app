@@ -10,6 +10,8 @@ import {
 import { ActivityIndicator, FAB, useTheme } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  clearData,
+  getRegionName,
   setCoordinatesAndFetchAddress,
   setMapMarkerCoordinates,
   setRegisterLocationWithMap,
@@ -19,8 +21,6 @@ import ErrorText from "./UI/ErrorText";
 import { MyLightTheme } from "../assets/theme/global";
 import LoadingScreen from "./UI/LoadingScreen";
 import BackButton from "./UI/BackButton";
-import * as Location from "expo-location";
-import { regionsUkr } from "../constants/ukrainianRegions";
 
 const INITIAL_COORDS = {
   latitude: 50.4501,
@@ -59,10 +59,16 @@ export default function Map({ forRegister }) {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
 
-    setTimeout(() => {
-      Alert.alert("Refreshed!", "Map data has been reloaded.");
-      setRefreshing(false);
-    }, 2000);
+    setTimeout(async () => {
+      try {
+        dispatch(clearData());
+        setCurrentCoords(INITIAL_COORDS);
+      } catch (error) {
+        Alert.alert("Помилка", "Не вдалося оновити дані карти.");
+      } finally {
+        setRefreshing(false);
+      }
+    }, 1000);
   }, []);
 
   useEffect(() => {
@@ -75,32 +81,17 @@ export default function Map({ forRegister }) {
     setCurrentCoords(region);
   };
 
-  const getRegionName = async (latitude, longitude) => {
-    if (
-      latitude >= 44.3864 &&
-      latitude <= 46.1927 &&
-      longitude >= 32.4919 &&
-      longitude <= 36.6209
-    ) {
-      return "Автономна Республіка Крим";
-    }
-
-    const address = await Location.reverseGeocodeAsync({ latitude, longitude });
-    if (!address || address.length === 0) {
-      return null;
-    }
-
-    const { region } = address[0] || {};
-    return regionsUkr[region] || null;
-  };
-
   const saveLocation = useCallback(async () => {
     try {
       setIsSavingLocation(true);
+
       const region = await getRegionName(
         currentCoords.latitude,
         currentCoords.longitude
       );
+
+      console.log("region: " + region);
+
       if (!region) {
         Alert.alert(
           "Помилка",
@@ -108,7 +99,8 @@ export default function Map({ forRegister }) {
         );
         return;
       }
-      dispatch(setMapMarkerCoordinates(currentCoords));
+
+      await dispatch(setMapMarkerCoordinates(currentCoords));
       let result;
       if (forRegister) {
         result = await dispatch(

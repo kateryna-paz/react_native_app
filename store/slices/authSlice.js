@@ -35,6 +35,7 @@ export const registerUser = createAsyncThunk(
           email,
           password,
         });
+
         return response.data;
       } else {
         return rejectWithValue(
@@ -42,10 +43,7 @@ export const registerUser = createAsyncThunk(
         );
       }
     } catch (error) {
-      return rejectWithValue({
-        message: error.response?.data?.message || "Request failed",
-        status: error.response?.status || 503,
-      });
+      return rejectWithValue(error.response?.data?.message || "Request failed");
     }
   }
 );
@@ -56,7 +54,6 @@ export const setRegisterUserData = createAsyncThunk(
     try {
       const userInDB = await axiosInstance.get(`/users/email/${email}`);
 
-      console.log(userInDB?.data);
       if (userInDB.data.id) {
         return rejectWithValue("Користувач з таким email вже існує");
       } else {
@@ -83,10 +80,7 @@ export const loginUser = createAsyncThunk(
       });
       return response.data;
     } catch (error) {
-      return rejectWithValue({
-        message: error.response?.data?.message || "Request failed",
-        status: error.response?.status || 503,
-      });
+      return rejectWithValue(error.response?.data?.message || "Request failed");
     }
   }
 );

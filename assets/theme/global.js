@@ -9,6 +9,7 @@ export const MyLightTheme = {
     green: "#2EB84E",
     greenDark: "#1f6228",
     greenLight: "#eefbf0",
+    greenTwo: "#5be57b",
 
     primary: "#672ab7",
     primaryLight: "#f6efff",
@@ -21,7 +22,7 @@ export const MyLightTheme = {
 
     accent: "#991818",
     red: "#ba0b0b",
-    accentLight: "#f6c0c0",
+    accentLight: "#ffc0c0",
 
     textPrimary: "#333",
     textSecondary: "#616161",

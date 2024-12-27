@@ -4,7 +4,7 @@ import axiosInstance from "../../services/axiosConfig";
 const initialState = {
   panels: null,
   registerPanel: {
-    square: 0,
+    power: 0,
     number: 0,
     typeId: null,
   },
@@ -27,7 +27,7 @@ export const fetchPanels = createAsyncThunk(
       const response = await axiosInstance.get(`/panels/userId/${userId}`);
 
       if (!response) {
-        return [];
+        return null;
       }
 
       const transformedData = response.data.map((panel) => ({
@@ -35,7 +35,7 @@ export const fetchPanels = createAsyncThunk(
         typeId: panel.typeId.id,
         type: panel.typeId.type,
         efficiency: panel.typeId.efficiency,
-        square: panel.square,
+        power: panel.power,
         number: panel.number,
         userId: panel.userId,
       }));
@@ -49,12 +49,12 @@ export const fetchPanels = createAsyncThunk(
 
 export const changePanel = createAsyncThunk(
   "panels/changePanel",
-  async ({ id, typeId, number, square }, { rejectWithValue }) => {
+  async ({ id, typeId, number, power }, { rejectWithValue }) => {
     try {
       const updatedPanel = await axiosInstance.put(`/panels/${id}`, {
         typeId,
         number,
-        square,
+        power,
       });
 
       return updatedPanel.data;
@@ -68,7 +68,7 @@ export const changePanel = createAsyncThunk(
 
 export const addPanel = createAsyncThunk(
   "panels/addPanel",
-  async ({ typeId, number, square }, { rejectWithValue, getState }) => {
+  async ({ typeId, number, power }, { rejectWithValue, getState }) => {
     try {
       const state = getState();
       const userId = state.auth.user?.id;
@@ -78,10 +78,11 @@ export const addPanel = createAsyncThunk(
           "Помилка при додаванні нової панелі, користувач не визначений."
         );
       }
+
       const newPanel = await axiosInstance.post("/panels", {
         typeId,
         number,
-        square,
+        power,
         userId,
       });
 
@@ -90,15 +91,16 @@ export const addPanel = createAsyncThunk(
         typeId: newPanel.data.typeId.id,
         type: newPanel.data.typeId.type,
         efficiency: newPanel.data.typeId.efficiency,
-        square: newPanel.data.square,
+        power: newPanel.data.power,
         number: newPanel.data.number,
         userId: newPanel.data.userId,
       };
 
+
       return transformedData;
     } catch (error) {
       return rejectWithValue(
-        "Помилка при додаванні нової панелі " + error.message
+        "Помилка при додаванні нової панелі " + error?.message
       );
     }
   }
@@ -185,11 +187,11 @@ const panelSlice = createSlice({
           id: action.payload.id,
           typeId: action.payload.typeId,
           type: action.payload.type,
-          square: action.payload.square,
+          power: action.payload.power,
           number: action.payload.number,
         };
         state.registerPanel = {
-          square: 0,
+          power: 0,
           number: 0,
           typeId: null,
         };

@@ -1,113 +1,169 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
-import { StyleSheet, View, Text, Animated } from "react-native";
-import { useTheme } from "react-native-paper";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Animated,
+  ScrollView,
+  RefreshControl,
+  Pressable,
+  Alert,
+} from "react-native";
+import { Icon, useTheme } from "react-native-paper";
 import MyContainer from "../../../components/UI/MyContainer";
 import EnergyButton from "../../../components/home/EnergyButton";
 import { useAppData } from "../../../hooks/useAppData";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
 import ErrorScreen from "../../../components/UI/ErrorScreen";
 import { MyLightTheme } from "../../../assets/theme/global";
+import { router } from "expo-router";
+import useSolarEnergyCalculator from "../../../hooks/useSolarEnergyCalculator";
+import EnergyChart from "../../../components/home/EnergyChart";
+import CloudinessChart from "../../../components/home/CloudinessChart";
 
 export default function HomeScreen() {
   const theme = useTheme();
 
   const [show, setShow] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { user, location, panels, weatherData, panelTypes, isLoading, error } =
-    useAppData();
+  const {
+    location,
+    panels,
+    weatherData,
+    panelTypes,
+    isLoading,
+    error,
+    reloadData,
+  } = useAppData();
+  const { calculateHourlyEnergy } = useSolarEnergyCalculator();
 
-  const [panelsSquare, setPanelsSquare] = useState({
-    monocristal: 0,
-    policristal: 0,
-    amorfni: 0,
-  });
-
-  const [efficiency, setEfficincy] = useState({
-    monocristal: 0,
-    policristal: 0,
-    amorfni: 0,
-  });
-  const [insolation, setInsolation] = useState(0);
+  const [hourlyEnergy, setHourlyEnergy] = useState(null);
   const [totalEnergy, setTotalEnergy] = useState(null);
 
-  const blockAnimations = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
+  const efficiency = useMemo(() => {
+    if (!panels?.length || !panelTypes?.length) return null;
 
-  const calculateDailyEnergy = useMemo(() => {
-    return (cloudiness, dailyInsolation, energy) => {
-      const cloudImpact = 1 - 0.8 * (cloudiness / 100);
-      const totalEnergy = energy * dailyInsolation * cloudImpact;
-      console.log("Вироблена енергія (кВт·год/день):", totalEnergy);
-      return totalEnergy;
+    const effMono =
+      panelTypes.find((pT) => pT.type === "Монокристалічні").efficiency / 100;
+    const effPoli =
+      panelTypes.find((pT) => pT.type === "Полікристалічні").efficiency / 100;
+    const effAmo =
+      panelTypes.find((pT) => pT.type === "Аморфні").efficiency / 100;
+
+    return {
+      monocristal: effMono,
+      policristal: effPoli,
+      amorfni: effAmo,
     };
-  }, []);
+  }, [panels, panelTypes]);
 
-  const handleCountEnergy = () => {
-    if (!weatherData || !location || !panels) return;
+  const panelsPower = useMemo(() => {
+    if (!panels?.length || !efficiency) return null;
 
-    const energyMono =
-      panelsSquare.monocristal * (efficiency.monocristal / 100);
-    const energyPoly =
-      panelsSquare.policristal * (efficiency.policristal / 100);
-    const energyAmorph = panelsSquare.amorfni * (efficiency.amorfni / 100);
-    const totalPanelsEnergy = energyMono + energyPoly + energyAmorph;
-
-    const dailyInsolation = insolation * weatherData.sunDayHours;
-    const calculatedEnergy = calculateDailyEnergy(
-      weatherData.cloudiness,
-      dailyInsolation,
-      totalPanelsEnergy
+    return panels.reduce(
+      (acc, panel) => {
+        const totalPower = (+panel.number * +panel.power) / 1000;
+        if (panel.type === "Монокристалічні") {
+          acc.monocristal += totalPower * efficiency.monocristal;
+        } else if (panel.type === "Полікристалічні") {
+          acc.policristal += totalPower * efficiency.policristal;
+        } else if (panel.type === "Аморфні") {
+          acc.amorfni += totalPower * efficiency.amorfni;
+        }
+        return acc;
+      },
+      { monocristal: 0, policristal: 0, amorfni: 0 }
     );
+  }, [panels, efficiency]);
 
-    setTotalEnergy(calculatedEnergy);
+  const insolation = useMemo(() => {
+    if (!location) return 0;
+    const monthNumber = new Date().getMonth();
+    return location.monthlyInsolation[monthNumber];
+  }, [location]);
 
-    blockAnimations.forEach((anim, index) => {
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 800,
-        delay: index * 500,
-        useNativeDriver: true,
-      }).start();
-    });
+  const blockAnimations = useMemo(
+    () => Array.from({ length: 3 }, () => new Animated.Value(0)),
+    []
+  );
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setShow(false);
+      setTotalEnergy(null);
+      await reloadData();
+      blockAnimations.forEach((anim) => anim.setValue(0));
+    } catch (error) {
+      Alert.alert("Помилка оновлення", "Не вдалося оновити дані.");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  useEffect(() => {
-    if (panels?.length > 0 && panelTypes?.length > 0) {
-      const newPanelsSquare = panels.reduce(
-        (acc, panel) => {
-          if (panel.type === "Монокристалічні") {
-            acc.monocristal += panel.number * panel.square;
-          } else if (panel.type === "Полікристалічні") {
-            acc.policristal += panel.number * panel.square;
-          } else if (panel.type === "Аморфні") {
-            acc.amorfni += panel.number * panel.square;
-          }
-          return acc;
-        },
-        { monocristal: 0, policristal: 0, amorfni: 0 }
+  const startBlockAnimations = useCallback(() => {
+    Animated.stagger(
+      600,
+      blockAnimations.map((animation) =>
+        Animated.timing(animation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+  }, [blockAnimations]);
+
+  const handleCountEnergy = useCallback(() => {
+    setShow(true);
+    if (!weatherData || !location || !panels || panels.length === 0) {
+      Alert.alert(
+        "Недостатньо даних",
+        "Будь ласка, перевірте налаштування панелей та геолокації."
       );
-      setEfficincy({
-        monocristal: panelTypes.find(
-          (panel) => panel.type === "Монокристалічні"
-        ).efficiency,
-        policristal: panelTypes.find(
-          (panel) => panel.type === "Полікристалічні"
-        ).efficiency,
-        amorfni: panelTypes.find((panel) => panel.type === "Аморфні")
-          .efficiency,
-      });
-      setPanelsSquare(newPanelsSquare);
+      return;
     }
-    if (location) {
-      const monthNumber = new Date().getMonth();
-      setInsolation(location.monthlyInsolation[monthNumber]);
+
+    const { hourlyEnergy, allEnergy } = calculateHourlyEnergy(
+      weatherData.hourlyClouds,
+      weatherData.sunrise,
+      weatherData.sunset,
+      insolation,
+      panelsPower,
+      panels
+    );
+
+    setHourlyEnergy(hourlyEnergy);
+    setTotalEnergy(allEnergy);
+
+    setTimeout(() => {
+      startBlockAnimations();
+    }, 100);
+  }, [
+    weatherData,
+    location,
+    panels,
+    insolation,
+    panelsPower,
+    calculateHourlyEnergy,
+    startBlockAnimations,
+  ]);
+
+  useEffect(() => {
+    blockAnimations.forEach((anim) => {
+      anim.setValue(0);
+    });
+    if (totalEnergy) {
+      startBlockAnimations();
     }
-  }, [user, panels, panelTypes, location, weatherData]);
+  }, [totalEnergy]);
+
+  useEffect(() => {
+    if (!isLoading && show && weatherData && location && panels?.length > 0) {
+      handleCountEnergy();
+    }
+  }, [isLoading, show, handleCountEnergy]);
 
   if (isLoading) {
     return (
@@ -126,6 +182,8 @@ export default function HomeScreen() {
         colorEnd={theme.colors.secondaryLight}
         theme={theme}
         errorMessage={error}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
       />
     );
   }
@@ -135,102 +193,93 @@ export default function HomeScreen() {
       colorStart={theme.colors.secondaryDark}
       colorEnd={theme.colors.secondaryLight}
     >
-      <View
-        style={[{ backgroundColor: theme.colors.background }, styles.container]}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            enabled={true}
+            progressViewOffset={50}
+            progressBackgroundColor={theme.colors.secondaryLight}
+            tintColor={theme.colors.secondaryLight}
+            titleColor={theme.colors.secondaryLight}
+            refreshingProp={0.4}
+          />
+        }
       >
-        <EnergyButton
-          style={styles.energyButton}
-          onPress={handleCountEnergy}
-          theme={theme}
-        />
+        <View style={!show ? styles.buttonContainer : styles.container}>
+          {show && (
+            <ScrollView>
+              <View style={styles.dataContainer}>
+                <Animated.View
+                  style={[
+                    styles.totalEnergyContainer,
+                    { opacity: blockAnimations[0] },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: theme.colors.primaryLight,
+                      fontFamily: "SofiaSans",
+                    }}
+                  >
+                    Очікувана енергія
+                  </Text>
+                  <Text style={styles.text}>
+                    {totalEnergy && `${totalEnergy} кВт·год/день`}
+                  </Text>
+                </Animated.View>
 
-        <Animated.View
-          style={[styles.paragraphContainer, { opacity: blockAnimations[0] }]}
-        >
-          <View>
-            <Text style={styles.heading}>
-              Геолокація{"  "}
-              <Text style={styles.highlightText}>
-                ({location?.regionName.split(" ")[0]} обл.)
-              </Text>
-            </Text>
-          </View>
-          <Text style={styles.text}>
-            {location?.latitude?.toFixed(10)},{" "}
-            {location?.longitude?.toFixed(10)}
-            {"\n"}
-          </Text>
-        </Animated.View>
+                <Animated.View style={{ opacity: blockAnimations[0] }}>
+                  <Pressable
+                    onPress={() => router.push("/energy_distribution")}
+                    style={styles.linkContainer}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontFamily: "SofiaSans",
+                        color: theme.colors.white,
+                        textAlign: "left",
+                      }}
+                    >
+                      Розподілити енергію між приладами
+                    </Text>
 
-        <Animated.View
-          style={[styles.paragraphContainer, { opacity: blockAnimations[1] }]}
-        >
-          <Text style={styles.heading}>Панелі</Text>
-          <Text style={styles.text}>
-            {panelsSquare.monocristal !== 0 && (
-              <Text>
-                Монокристалічні (ККД = {efficiency.monocristal}%)
-                <Text style={styles.highlightText}>
-                  {" "}
-                  - {panelsSquare.monocristal} м² {"\n"}
-                </Text>
-              </Text>
-            )}
-            {panelsSquare.policristal !== 0 && (
-              <Text>
-                Полікристалічні (ККД = {efficiency.policristal}%)
-                <Text style={styles.highlightText}>
-                  {" "}
-                  - {panelsSquare.policristal} м² {"\n"}
-                </Text>
-              </Text>
-            )}
-            {panelsSquare.amorfni !== 0 && (
-              <Text>
-                Аморфні (ККД = {efficiency.amorfni}%)
-                <Text style={styles.highlightText}>
-                  {" "}
-                  - {panelsSquare.amorfni} м²
-                </Text>
-              </Text>
-            )}
-          </Text>
-        </Animated.View>
+                    <Icon
+                      source={"arrow-right-thin"}
+                      size={20}
+                      color={theme.colors.white}
+                    />
+                  </Pressable>
+                </Animated.View>
 
-        <Animated.View
-          style={[styles.paragraphContainer, { opacity: blockAnimations[2] }]}
-        >
-          <Text style={styles.heading}>Інсоляція цього місяця</Text>
+                <Animated.View
+                  style={{ opacity: blockAnimations[1], marginVertical: 10 }}
+                >
+                  <EnergyChart weatherData={hourlyEnergy} />
+                </Animated.View>
+                <Animated.View
+                  style={{ opacity: blockAnimations[2], marginVertical: 10 }}
+                >
+                  <CloudinessChart weatherData={hourlyEnergy} />
+                </Animated.View>
+              </View>
+            </ScrollView>
+          )}
 
-          <Text style={styles.text}>
-            <Text style={styles.highlightText}>{insolation} </Text> кВт·год/м²
-            за день
-          </Text>
-        </Animated.View>
-
-        <Animated.View
-          style={[styles.paragraphContainer, { opacity: blockAnimations[3] }]}
-        >
-          <View style={styles.headingContainer}>
-            <Text style={styles.heading}>Сонячний день</Text>
-            <Text style={styles.heading}>Хмарність</Text>
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.highlightText}>
-              {weatherData?.sunDayHours} год
-            </Text>
-            <Text style={styles.highlightText}>{weatherData?.cloudiness}%</Text>
-          </View>
-        </Animated.View>
-        <Animated.View
-          style={[styles.paragraphContainer, { opacity: blockAnimations[4] }]}
-        >
-          <Text style={styles.heading}>Очікувана енергія</Text>
-          <Text style={styles.text}>
-            {totalEnergy && `${totalEnergy.toFixed(2)} кВт·год/день`}
-          </Text>
-        </Animated.View>
-      </View>
+          {!show && (
+            <EnergyButton
+              style={styles.energyButton}
+              onPress={handleCountEnergy}
+              theme={theme}
+            />
+          )}
+        </View>
+      </ScrollView>
     </MyContainer>
   );
 }
@@ -238,31 +287,45 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
-    padding: 20,
-    paddingTop: 30,
-    marginHorizontal: 16,
-    marginBottom: 110,
+    marginHorizontal: 10,
+    marginBottom: 128,
+    paddingTop: 2,
     flex: 1,
-    backgroundColor: "white",
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
+    justifyContent: "center",
   },
-  paragraphContainer: {
-    borderRadius: 12,
-    padding: 18,
-    marginTop: 12,
-    backgroundColor: "white",
-    borderWidth: 2,
-    borderColor: MyLightTheme.colors.primary,
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 6,
+  scrollView: {
+    flex: 1,
+  },
+  dataContainer: {
+    display: "flex",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginHorizontal: 10,
+  },
+  totalEnergyContainer: {
+    borderRadius: 10,
+    padding: 20,
+    backgroundColor: MyLightTheme.colors.primaryDark,
+    borderWidth: 3,
+    borderColor: MyLightTheme.colors.primaryLight,
+    shadowColor: "white",
+    shadowOffset: { width: 2, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 10,
     width: "100%",
+    marginBottom: 10,
+  },
+  textContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  linkContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 10,
   },
   headingContainer: {
     flexDirection: "row",
@@ -274,39 +337,36 @@ const styles = StyleSheet.create({
     color: MyLightTheme.colors.primaryDark,
     fontFamily: "SofiaSansBold",
   },
-  textContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
   text: {
-    fontSize: 16,
-    color: MyLightTheme.colors.greenDark,
-    lineHeight: 24,
-    fontFamily: "SofiaSans",
+    fontSize: 24,
+    marginTop: 14,
+    textAlign: "right",
+    color: MyLightTheme.colors.white,
+    fontFamily: "SofiaSansBold",
   },
   highlightText: {
     color: MyLightTheme.colors.primary,
     fontFamily: "SofiaSans",
     fontSize: 16,
   },
-  shadowBox: {
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    borderRadius: 10,
-    backgroundColor: "white",
-  },
   energyButton: {
     backgroundColor: MyLightTheme.colors.secondaryLight,
+    marginHorizontal: 20,
     borderRadius: 30,
     padding: 15,
-    marginBottom: 10,
     shadowColor: MyLightTheme.colors.secondaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: "center",
+    marginHorizontal: 10,
+    marginBottom: 128,
   },
 });

@@ -30,7 +30,7 @@ export default function panel() {
   };
 
   const handleAddPanel = async () => {
-    if (panelData.square <= 0 || panelData.number <= 0 || !panelData.typeId) {
+    if (panelData.power <= 0 || panelData.number <= 0 || !panelData.typeId) {
       Alert.alert(
         "Помилка створення нової панелі",
         "Будь ласка, оберіть тип панелей, введіть площу 1 панелі (у м²) та кількість таких панелей."
@@ -74,19 +74,19 @@ export default function panel() {
             />
           </View>
 
-          <Text style={styles.label}>Введіть площу 1 панелі (у м²):</Text>
+          <Text style={styles.label}>Введіть потужність панелі (Вт):</Text>
           <TextInput
-            label="Площа 1 (м²)"
+            label="Потужність (Вт)"
             mode="outlined"
-            value={panelData.square.toString() || 0}
-            onChangeText={(val) => handleInputChange("square", +val)}
+            value={panelData.power.toString() || ""}
+            onChangeText={(val) => handleInputChange("power", +val)}
             keyboardType="numeric"
           />
           <Text style={styles.label}>Введіть кількість панелей:</Text>
           <TextInput
             label="Кількість"
             mode="outlined"
-            value={panelData.number.toString() || 0}
+            value={panelData.number.toString() || ""}
             onChangeText={(val) => handleInputChange("number", +val)}
             keyboardType="numeric"
           />

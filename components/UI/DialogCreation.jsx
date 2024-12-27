@@ -1,29 +1,20 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import { Button, Dialog, Portal } from "react-native-paper";
-import ReductPanelCard from "../profile/ReductCardPanel";
 import { MyLightTheme } from "../../assets/theme/global";
 
-export default function PanelDialog({
+export default function DialogCreation({
   visible,
   hideDialog,
-  panelData,
   saveChanges,
-  setPanelData,
-  panelTypes,
   title,
+  children,
 }) {
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={hideDialog}>
         <Dialog.Title style={styles.dialogTitle}>{title}</Dialog.Title>
-        <Dialog.Content>
-          <ReductPanelCard
-            panelTypes={panelTypes}
-            panelData={panelData}
-            setPanelData={setPanelData}
-          />
-        </Dialog.Content>
+        <Dialog.Content>{children}</Dialog.Content>
         <Dialog.Actions>
           <Button mode="outlined" style={styles.button} onPress={hideDialog}>
             Скасувати

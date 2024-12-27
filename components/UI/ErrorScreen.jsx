@@ -1,22 +1,60 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
 import MyContainer from "./MyContainer";
 
 export default function ErrorDisplay({
   colorStart,
   colorEnd,
   errorMessage,
+  onRefresh,
+  refreshing,
   theme,
 }) {
   return (
     <MyContainer colorStart={colorStart} colorEnd={colorEnd}>
-      <View
-        style={[{ backgroundColor: theme.colors.background }, styles.container]}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        <Text style={{ color: theme.colors.red, fontSize: 18 }}>
-          An error occurred: {errorMessage}
-        </Text>
-      </View>
+        <View
+          style={[
+            { backgroundColor: theme.colors.background },
+            styles.container,
+          ]}
+        >
+          <Text
+            style={{
+              color: theme.colors.text,
+              fontSize: 26,
+              marginTop: 10,
+              textAlign: "center",
+              fontFamily: "SofiaSansBold",
+            }}
+          >
+            Помилка
+          </Text>
+          <Text
+            style={{
+              color: theme.colors.red,
+              fontSize: 18,
+              marginTop: 10,
+              marginHorizontal: 4,
+              fontFamily: "SofiaSans",
+            }}
+          >
+            {errorMessage}
+          </Text>
+        </View>
+      </ScrollView>
     </MyContainer>
   );
 }
@@ -33,5 +71,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 10,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
 });

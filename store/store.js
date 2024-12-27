@@ -4,6 +4,7 @@ import typesReducer from "./slices/typesSlice";
 import panelReducer from "./slices/panelSlice";
 import authReducer from "./slices/authSlice";
 import weatherReducer from "./slices/weatherSlice";
+import devicesReducer from "./slices/devicesSlice";
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     panel: panelReducer,
     auth: authReducer,
     weather: weatherReducer,
+    devices: devicesReducer,
   },
 });
 

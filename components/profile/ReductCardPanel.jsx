@@ -1,24 +1,38 @@
-import React, { useCallback, useEffect } from "react";
-import { View, Text } from "react-native";
-import { TextInput } from "react-native-paper";
+import React, { useCallback } from "react";
+import { View } from "react-native";
 import SelectList from "../UI/SelectList";
-import { useDebounce } from "../../hooks/useDebounce";
+import MyInput from "../UI/MyInput";
 
 export default function ReductPanelCard({
   panelData,
   setPanelData,
   panelTypes,
 }) {
-  const debouncedSetPanelData = useDebounce((key, value) => {
-    setPanelData((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  }, 300);
+  const handlePowerChange = useCallback(
+    (value) => {
+      setPanelData(
+        (prev) => ({
+          ...prev,
+          power: convertToNumeric(value),
+        }),
+        [setPanelData]
+      );
+    },
+    [setPanelData]
+  );
 
-  const handleInputChange = (key, value) => {
-    debouncedSetPanelData(key, value);
-  };
+  const handleNumberChange = useCallback(
+    (value) => {
+      setPanelData(
+        (prev) => ({
+          ...prev,
+          number: convertToNumeric(value),
+        }),
+        [setPanelData]
+      );
+    },
+    [setPanelData]
+  );
 
   const handleTypeChange = useCallback(
     (typeId) => {
@@ -26,6 +40,11 @@ export default function ReductPanelCard({
     },
     [setPanelData]
   );
+
+  const convertToNumeric = (value) => {
+    const normalized = value.replace(",", ".");
+    return normalized === "" ? null : Number(normalized);
+  };
 
   return (
     <View
@@ -51,31 +70,15 @@ export default function ReductPanelCard({
           alignItems: "center",
         }}
       >
-        <TextInput
-          label="Площа 1 (м²)"
-          mode="outlined"
-          value={panelData.square ? panelData.square.toString() : ""}
-          onChangeText={(val) => handleInputChange("square", val)}
-          style={{
-            fontFamily: "Kurale",
-            fontSize: 16,
-            width: "47%",
-          }}
-          keyboardType="numeric"
-          editable={true}
+        <MyInput
+          label="Потужність (Вт)"
+          initialValue={panelData.power?.toString() ?? ""}
+          onChangeText={handlePowerChange}
         />
-        <TextInput
+        <MyInput
           label="Кількість"
-          mode="outlined"
-          value={panelData.number ? panelData.number.toString() : ""}
-          onChangeText={(val) => handleInputChange("number", val)}
-          style={{
-            fontFamily: "Kurale",
-            fontSize: 16,
-            width: "47%",
-          }}
-          keyboardType="numeric"
-          editable={true}
+          initialValue={panelData.number?.toString() ?? ""}
+          onChangeText={handleNumberChange}
         />
       </View>
     </View>

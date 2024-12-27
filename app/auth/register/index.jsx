@@ -49,12 +49,10 @@ export default function RegisterScreen() {
     }
 
     try {
-      const resultAction = await dispatch(
-        setRegisterUserData({ name, email, password })
-      ).unwrap();
+      await dispatch(setRegisterUserData({ name, email, password })).unwrap();
       router.push("/auth/register/panel");
     } catch (err) {
-      Alert.alert("Помилка реєстрації:", err.message || "Щось пішло не так");
+      Alert.alert("Помилка реєстрації:", err || "Щось пішло не так");
     }
   };
 

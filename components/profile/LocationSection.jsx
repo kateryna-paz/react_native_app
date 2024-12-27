@@ -23,7 +23,7 @@ export default function LocationSection() {
     (state) => state.location
   );
 
-  const [localLocation, setLoacalLocation] = useState(null);
+  const [localLocation, setLocalLocation] = useState(null);
   const [visibleOptions, setVisibleOptions] = useState(false);
 
   const openOptions = () => {
@@ -57,9 +57,9 @@ export default function LocationSection() {
       setVisibleOptions(false);
     }
     if (location) {
-      setLoacalLocation(location);
+      setLocalLocation(location);
     }
-  }, [permission, location, dispatch]);
+  }, [permission, location]);
 
   return (
     <View style={styles.container}>
@@ -81,7 +81,7 @@ export default function LocationSection() {
               </View>
               <View style={styles.option}>
                 <Text style={styles.description}>
-                  Непральна локація? Змініть
+                  Неправильна локація? Змініть
                 </Text>
                 <IconButton
                   icon="arrow-down-drop-circle-outline"
