@@ -1,24 +1,25 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axiosInstance from "../../services/axiosConfig";
+import { panelTypesApi } from "../../services/apis/panelTypes";
+import { getErrorMessage } from "../utils/errorHandler";
+
+export const fetchPanelTypes = createAsyncThunk(
+  "panelTypes/fetchPanelTypes",
+  async (_, { rejectWithValue }) => {
+    try {
+      const types = await panelTypesApi.fetchTypes();
+
+      return types;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
 
 const initialState = {
   panelTypes: null,
   isTypesLoading: false,
   errorTypes: null,
 };
-
-export const fetchPanelTypes = createAsyncThunk(
-  "panelTypes/fetchPanelTypes",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.get("/paneltypes");
-
-      return response.data;
-    } catch (error) {
-      return rejectWithValue("Помилка при отриманні даних" + error);
-    }
-  }
-);
 
 const typesSlice = createSlice({
   name: "panelTypes",

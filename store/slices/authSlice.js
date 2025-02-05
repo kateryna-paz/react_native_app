@@ -1,17 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axiosInstance from "../../services/axiosConfig";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getErrorMessage } from "../utils/errorHandler";
+import authApi from "../../services/apis/auth";
 
 export const initializeAuth = createAsyncThunk(
   "auth/initializeAuth",
   async (_, { rejectWithValue }) => {
     try {
-      const user = await AsyncStorage.getItem("user");
-      const token = await AsyncStorage.getItem("token");
-
+      const { user, token } = await authApi.getUserData();
       if (user && token) {
-        axiosInstance.defaults.headers.Authorization = `Bearer ${token}`;
-        return { user: JSON.parse(user), token };
+        authApi.setAuthToken(token);
+        return { user, token };
       }
       return { user: null, token: null };
     } catch (error) {
@@ -22,50 +20,21 @@ export const initializeAuth = createAsyncThunk(
 
 export const registerUser = createAsyncThunk(
   "auth/register",
-  async (_, { rejectWithValue, getState }) => {
-    const state = getState();
-
-    console.log(state.auth.user);
-    const { name, email, password } = state.auth.user;
-
-    try {
-      if (name && email && password) {
-        const response = await axiosInstance.post("/users/register", {
-          name,
-          email,
-          password,
-        });
-
-        return response.data;
-      } else {
-        return rejectWithValue(
-          "Сталася помилка при створені акаунта, перевірте чи було  введено ім'я, електронна пошта та пароль."
-        );
-      }
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Request failed");
-    }
-  }
-);
-
-export const setRegisterUserData = createAsyncThunk(
-  "auth/setRegisterUserData",
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      const userInDB = await axiosInstance.get(`/users/email/${email}`);
-
-      if (userInDB.data.id) {
-        return rejectWithValue("Користувач з таким email вже існує");
-      } else {
-        return { name, email, password };
+      if (!name || !email || !password) {
+        return rejectWithValue(
+          "Перевірте чи було введено ім'я, електронна пошта та пароль."
+        );
       }
+
+      const data = await authApi.register({ name, email, password });
+      await authApi.saveUserData(data.user, data.token);
+      authApi.setAuthToken(data.token);
+
+      return data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message ||
-          error.response?.message ||
-          error.data?.message ||
-          "Request failed"
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -74,13 +43,13 @@ export const loginUser = createAsyncThunk(
   "auth/login",
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/users/login", {
-        email,
-        password,
-      });
-      return response.data;
+      const data = await authApi.login({ email, password });
+      await authApi.saveUserData(data.user, data.token);
+      authApi.setAuthToken(data.token);
+
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Request failed");
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -89,10 +58,13 @@ export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await AsyncStorage.multiRemove(["token", "user"]);
+      await authApi.clearUserData();
+      authApi.removeAuthToken();
       return null;
     } catch (error) {
-      return rejectWithValue("Помилка виходу з акаунту");
+      return rejectWithValue(
+        getErrorMessage(error, "Помилка виходу з акаунту")
+      );
     }
   }
 );
@@ -108,8 +80,14 @@ const initialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState,
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
+      // Register
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -119,30 +97,13 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.userToken = action.payload.token;
         state.error = null;
-        AsyncStorage.multiSet([
-          ["user", JSON.stringify(action.payload.user)],
-          ["token", action.payload.token],
-        ]);
-        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(setRegisterUserData.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(setRegisterUserData.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = { ...action.payload };
-        console.log(state.user);
-        state.error = null;
-      })
-      .addCase(setRegisterUserData.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
+
+      // Login
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -152,21 +113,20 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.userToken = action.payload.token;
         state.error = null;
-        AsyncStorage.multiSet([
-          ["user", JSON.stringify(action.payload.user)],
-          ["token", action.payload.token],
-        ]);
-        axiosInstance.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
+
+      // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.userToken = null;
         state.isLoggedIn = false;
       })
+
+      // Initialize
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.userToken = action.payload.token;
@@ -180,4 +140,5 @@ const authSlice = createSlice({
   },
 });
 
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer;

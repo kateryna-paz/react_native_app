@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { icon } from "../constants/icons";
 import Animated, {
   interpolate,
@@ -7,10 +7,9 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useEffect } from "react";
-import { useTheme } from "react-native-paper";
+import { FONTS, MyLightTheme } from "../assets/theme/global";
 
 function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
-  const theme = useTheme();
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -38,7 +37,9 @@ function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
     >
       <Animated.View style={animatedIcon}>
         {icon[routeName]({
-          color: isFocused ? theme.colors.white : theme.colors.textPrimary,
+          color: isFocused
+            ? MyLightTheme.colors.white
+            : MyLightTheme.colors.textPrimary,
           size: 26,
         })}
       </Animated.View>
@@ -46,9 +47,11 @@ function TabBarButton({ onPress, onLongPress, label, isFocused, routeName }) {
       <Animated.Text
         style={[
           {
-            color: isFocused ? theme.colors.white : theme.colors.textSecondary,
+            color: isFocused
+              ? MyLightTheme.colors.white
+              : MyLightTheme.colors.textSecondary,
             fontSize: 11,
-            fontFamily: "SofiaSans",
+            fontFamily: FONTS.SofiaSans,
           },
           animatedText,
         ]}
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-    fontFamily: "RobotoSlab",
+    fontFamily: FONTS.RobotoSlab,
   },
 });
 

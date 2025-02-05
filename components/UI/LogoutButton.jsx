@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Text, View } from "react-native";
 import {
   IconButton,
   Dialog,
@@ -22,7 +22,6 @@ export default function LogoutButton({ styles }) {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser());
-      console.log("User logged out");
       hideDialog();
       router.push("/auth");
     } catch (e) {
@@ -37,15 +36,19 @@ export default function LogoutButton({ styles }) {
         mode="outlined"
         iconColor="#991818"
         size={26}
-        style={[stylesC.iconButton, styles]}
+        style={styles}
         onPress={showDialog}
       />
 
       <Portal>
         <Dialog visible={visible} onDismiss={hideDialog}>
-          <Dialog.Title>Confirm Logout</Dialog.Title>
+          <Dialog.Title>
+            <Text>Confirm Logout</Text>
+          </Dialog.Title>
           <Dialog.Content>
-            <Paragraph>Are you sure you want to log out?</Paragraph>
+            <Paragraph>
+              <Text>Are you sure you want to log out?</Text>
+            </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={hideDialog}>Cancel</Button>
@@ -56,11 +59,3 @@ export default function LogoutButton({ styles }) {
     </View>
   );
 }
-
-const stylesC = StyleSheet.create({
-  iconButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 24,
-  },
-});

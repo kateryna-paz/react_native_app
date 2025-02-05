@@ -1,16 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCloudiness,
   fetchLocation,
   setPermission,
-} from "../store/slices/locationAndMapSlice";
-import { useEffect, useCallback, useState } from "react";
-import { fetchPanelTypes } from "../store/slices/typesSlice";
-import { fetchWeather } from "../store/slices/weatherSlice";
-import { fetchPanels } from "../store/slices/panelSlice";
+} from "../../store/slices/locationAndMapSlice";
+import { useEffect, useCallback, useMemo } from "react";
+import { fetchPanelTypes } from "../../store/slices/typesSlice";
+import { fetchWeather } from "../../store/slices/weatherSlice";
+import { fetchPanels } from "../../store/slices/panelSlice";
+import { useRouter } from "expo-router";
 
 export const useAppData = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
+
   const {
     user,
     isLoading: isUserLoading,
@@ -27,15 +29,20 @@ export const useAppData = () => {
     isLoading: isPanelsLoading,
     error: panelsError,
   } = useSelector((state) => state.panel);
-
-  const { panelTypes, isTypesLoading, typesError } = useSelector(
-    (state) => state.panelTypes
-  );
+  const {
+    panelTypes,
+    isLoading: isTypesLoading,
+    typesError,
+  } = useSelector((state) => state.panelTypes);
   const {
     weatherData,
     isLoading: isWeatherLoading,
     error: weatherError,
   } = useSelector((state) => state.weather);
+
+  const isDataMissingCalc = useMemo(() => {
+    return !location || !panels || panels.length === 0;
+  }, [location, panels]);
 
   const reloadData = useCallback(async () => {
     try {
@@ -50,13 +57,19 @@ export const useAppData = () => {
         dispatch(fetchPanels());
       }
 
-      if (location) {
+      if (!isDataMissingCalc) {
         dispatch(fetchWeather());
       }
     } catch (error) {
       console.error("Error reloading app data:", error);
     }
-  }, [location, permission, user?.id]);
+  }, [location, permission, user?.id, isDataMissingCalc]);
+
+  useEffect(() => {
+    if (error === "Помилка авторизації") {
+      router.push("/auth");
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!permission) dispatch(setPermission());
@@ -64,18 +77,12 @@ export const useAppData = () => {
 
   useEffect(() => {
     if (!location) dispatch(fetchLocation());
-  }, [location]);
-
-  useEffect(() => {
     if (!panelTypes) dispatch(fetchPanelTypes());
     if (!panels && user?.id) dispatch(fetchPanels());
-  }, [panelTypes, user?.id, panels]);
-
-  useEffect(() => {
-    if (!location) dispatch(fetchLocation());
-
-    if (!weatherData) dispatch(fetchWeather());
-  }, [weatherData, location]);
+    if (!isDataMissingCalc && !weatherData) {
+      dispatch(fetchWeather());
+    }
+  }, [weatherData, isDataMissingCalc, location, panelTypes, panels, user?.id]);
 
   return {
     user,
@@ -83,6 +90,7 @@ export const useAppData = () => {
     weatherData,
     panels,
     panelTypes,
+    isDataMissingCalc,
     isLoading:
       isUserLoading ||
       isLocationLoading ||

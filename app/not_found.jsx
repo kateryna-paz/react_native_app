@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { MyLightTheme } from "../assets/theme/global";
+import { FONTS, MyLightTheme } from "../assets/theme/global";
 
 export default function NotFoundScreen() {
   return (

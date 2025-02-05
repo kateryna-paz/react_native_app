@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated } from "react-native";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function SelectList({
   title,
@@ -13,6 +14,8 @@ export default function SelectList({
   arrowStyle,
 }) {
   const [selectedItem, setSelectedItem] = useState(null);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+  const selectedAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (Array.isArray(items) && selectedTypeId) {
@@ -24,42 +27,95 @@ export default function SelectList({
     }
   }, [selectedTypeId, items]);
 
+  const handleOpen = (isOpened) => {
+    Animated.timing(dropdownAnim, {
+      toValue: isOpened ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleSelect = (item) => {
+    setSelectedItem(item);
+    if (onSelect) onSelect(item.id);
+
+    Animated.sequence([
+      Animated.timing(selectedAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectedAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <SelectDropdown
       data={items}
-      onSelect={(item) => {
-        setSelectedItem(item);
-        if (onSelect) onSelect(item.id);
-      }}
+      onSelect={handleSelect}
       renderButton={(currentSelectedItem, isOpened) => {
+        handleOpen(isOpened);
+
         return (
-          <View style={[styles.dropdownButtonStyle, style]}>
-            <Text style={[styles.dropdownButtonTxtStyle, textStyle]}>
+          <Animated.View
+            style={[
+              styles.dropdownButtonStyle,
+              style,
+              {
+                transform: [
+                  {
+                    scale: dropdownAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.05],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Animated.Text
+              style={[
+                styles.dropdownButtonTxtStyle,
+                textStyle,
+                {
+                  transform: [
+                    {
+                      scale: selectedAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
               {currentSelectedItem?.type || selectedItem?.type || title}
-            </Text>
+            </Animated.Text>
             <Icon
               name={isOpened ? "chevron-up" : "chevron-down"}
               style={[styles.dropdownButtonArrowStyle, arrowStyle]}
             />
-          </View>
+          </Animated.View>
         );
       }}
-      renderItem={(item) => {
-        return (
-          <View
-            style={{
-              ...styles.dropdownItemStyle,
-              ...(item.id === selectedItem?.id && {
-                backgroundColor: "#7E44C9",
-              }),
-            }}
-          >
-            <Text style={[styles.dropdownButtonTxtStyle, textStyle]}>
-              {item.type}
-            </Text>
-          </View>
-        );
-      }}
+      renderItem={(item) => (
+        <View
+          style={{
+            ...styles.dropdownItemStyle,
+            ...(item.id === selectedItem?.id && {
+              backgroundColor: MyLightTheme.colors.primarySelected,
+            }),
+          }}
+        >
+          <Text style={[styles.dropdownButtonTxtStyle, textStyle]}>
+            {item.type}
+          </Text>
+        </View>
+      )}
       showsVerticalScrollIndicator={false}
       dropdownStyle={styles.dropdownMenuStyle}
     />
@@ -70,7 +126,7 @@ const styles = StyleSheet.create({
   dropdownButtonStyle: {
     width: "auto",
     height: 44,
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
@@ -79,16 +135,16 @@ const styles = StyleSheet.create({
   },
   dropdownButtonTxtStyle: {
     flex: 1,
-    color: "white",
-    fontFamily: "Kurale",
+    color: MyLightTheme.colors.white,
+    fontFamily: FONTS.Kurale,
     fontSize: 16,
   },
   dropdownButtonArrowStyle: {
-    color: "white",
+    color: MyLightTheme.colors.white,
     fontSize: 26,
   },
   dropdownMenuStyle: {
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
     borderRadius: 8,
   },
   dropdownItemStyle: {

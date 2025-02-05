@@ -2,14 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { LineChart } from "react-native-gifted-charts";
-import { useTheme } from "react-native-paper";
-import { MyLightTheme } from "../../assets/theme/global";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 import CustomDataPoint from "./CustomDataPoint";
-import setLabel from "../../services/setLabelItemChart";
+import setLabel from "../../utils/setLabelItemChart";
 
 export default function EnergyChart({ weatherData }) {
-  const theme = useTheme();
-
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -33,11 +30,10 @@ export default function EnergyChart({ weatherData }) {
   const maxDataValue = Math.max(...energyData.map((d) => d.value));
   const maxValue =
     maxDataValue >= 0.2 ? maxDataValue + 0.4 : maxDataValue + 0.05;
-
   if (isVisible) {
     return (
       <LinearGradient
-        colors={["#f5f5f5", "#e0e0e0"]}
+        colors={[MyLightTheme.colors.white, MyLightTheme.colors.primaryLight]}
         style={{
           padding: 10,
           borderRadius: 16,
@@ -46,39 +42,38 @@ export default function EnergyChart({ weatherData }) {
         <Text
           style={{
             textAlign: "center",
-            fontFamily: "Marmelad",
+            fontFamily: FONTS.Marmelad,
             fontSize: 18,
             marginBottom: 12,
             marginTop: 6,
-            color: theme.colors.textPrimary,
+            color: MyLightTheme.colors.textPrimary,
           }}
         >
           Вироблена енергія по годинах
         </Text>
 
         <LineChart
-          style={{
-            fontSize: 16,
-            fontFamily: "Kurale",
-          }}
           data={energyData}
           width={chartWidth}
           height={220}
-          spacing={chartWidth / energyData.length - 2}
-          initialSpacing={16}
+          spacing={chartWidth / energyData.length - 0.5}
+          initialSpacing={0}
           thickness={5}
           yAxisThickness={0}
           xAxisThickness={1}
-          xAxisColor="#aaa"
+          xAxisColor={MyLightTheme.colors.primary}
           yAxisTextStyle={{
-            color: theme.colors.primaryText,
-            fontSize: 12,
-            fontFamily: "Kurale",
+            color: MyLightTheme.colors.primaryText,
+            fontSize: 11,
+            width: 26,
+            fontFamily: FONTS.Kurale,
           }}
           xAxisLabelTextStyle={{
-            color: "#333",
+            color: MyLightTheme.colors.textPrimary,
             fontSize: 10,
-            fontFamily: "Kurale",
+            width: 28,
+            marginLeft: 10,
+            fontFamily: FONTS.Kurale,
           }}
           isAnimated
           animateOnDataChange
@@ -86,17 +81,20 @@ export default function EnergyChart({ weatherData }) {
           onDataChangeAnimationDuration={500}
           curved
           areaChart
-          startFillColor={theme.colors.primary}
+          startFillColor={MyLightTheme.colors.primary}
           startOpacity={0.8}
-          endFillColor={theme.colors.secondaryLight}
+          endFillColor={MyLightTheme.colors.secondaryLight}
           endOpacity={0.3}
-          color1={theme.colors.primary}
+          color1={MyLightTheme.colors.primary}
           showVerticalLines
           verticalLinesColor="#ddd"
           showStripOnPress
           stripColor="rgba(3, 169, 244, 0.1)"
           noOfSections={5}
           maxValue={maxValue}
+          yAxisLabelTexts={Array.from({ length: 6 }, (_, i) =>
+            (maxValue * (i / 5)).toFixed(5)
+          )}
           pointerConfig={{
             pointerStripUptoDataPoint: true,
             pointerStripColor: "lightgray",
@@ -110,18 +108,20 @@ export default function EnergyChart({ weatherData }) {
               return (
                 <View
                   style={{
-                    height: 60,
-                    width: 80,
-                    backgroundColor: "#282C3E",
+                    height: 40,
+                    width: 60,
+                    backgroundColor: MyLightTheme.colors.grayDark,
                     borderRadius: 4,
                     justifyContent: "center",
-                    paddingLeft: 18,
+                    paddingLeft: 12,
                   }}
                 >
-                  <Text style={{ color: "lightgray", fontSize: 12 }}>
-                    Energy
-                  </Text>
-                  <Text style={{ color: "white", fontWeight: "bold" }}>
+                  <Text
+                    style={{
+                      color: MyLightTheme.colors.white,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {items[0].value}
                   </Text>
                 </View>

@@ -1,53 +1,8 @@
 import React, { useRef, useEffect } from "react";
-import { Animated, TouchableOpacity, Text, View } from "react-native";
+import { Animated, TouchableOpacity, Text } from "react-native";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
-const useIconAnimation = () => {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const rotate = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const iconAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(translateY, {
-            toValue: -4,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotate, {
-            toValue: -1,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(translateY, {
-            toValue: 0,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotate, {
-            toValue: 0,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    );
-    iconAnimation.start();
-
-    return () => iconAnimation.stop();
-  }, [translateY, rotate]);
-
-  const rotateInterpolation = rotate.interpolate({
-    inputRange: [-1, 1],
-    outputRange: ["-10deg", "0deg"],
-  });
-
-  return { translateY, rotateInterpolation };
-};
-
-const useButtonBorderAnimation = (theme) => {
+const useButtonBorderAnimation = () => {
   const buttonBorder = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -72,14 +27,13 @@ const useButtonBorderAnimation = (theme) => {
 
   const borderColorInterpolation = buttonBorder.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.green, theme.colors.primary],
+    outputRange: [MyLightTheme.colors.green, MyLightTheme.colors.primary],
   });
 
   return { borderColorInterpolation };
 };
 
 export default function EnergyButton({ onPress, theme, style }) {
-  const { translateY, rotateInterpolation } = useIconAnimation();
   const { borderColorInterpolation } = useButtonBorderAnimation(theme);
 
   return (
@@ -103,23 +57,16 @@ export default function EnergyButton({ onPress, theme, style }) {
       >
         <Animated.Text
           style={{
-            color: theme.colors.primary,
-            fontFamily: "Marmelad",
+            color: MyLightTheme.colors.primary,
+            fontFamily: FONTS.Marmelad,
             fontSize: 20,
           }}
         >
           Розрахувати енергію
         </Animated.Text>
-        <Animated.View
-          style={{
-            transform: [
-              { translateY: translateY },
-              { rotate: rotateInterpolation },
-            ],
-          }}
-        >
-          <Text style={{ fontSize: 22, color: theme.colors.primary }}>⚡</Text>
-        </Animated.View>
+        <Text style={{ fontSize: 22, color: MyLightTheme.colors.primary }}>
+          ⚡
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );

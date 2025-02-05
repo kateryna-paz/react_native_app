@@ -1,12 +1,11 @@
-import { View, Text, Alert } from "react-native";
-import { IconButton, TextInput, useTheme } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { changePanel, deletePanel } from "../../store/slices/panelSlice";
-import { useSelector, useDispatch } from "react-redux";
+import { View, Text, StyleSheet } from "react-native";
+import { IconButton } from "react-native-paper";
 import DialogCreation from "../UI/DialogCreation";
 import DeletePanelDialog from "../UI/DeletePanelDialog";
-import { useState } from "react";
 import ReductPanelCard from "./ReductCardPanel";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
+import CustomAlert from "../UI/CustomAlert";
+import { usePanelCard } from "../../hooks/profile/usePanelCard";
 
 export default function PanelCard({
   id,
@@ -17,68 +16,29 @@ export default function PanelCard({
   refresh,
   panelTypes,
 }) {
-  const [panelData, setPanelData] = useState({
-    power: power || 0,
-    number: number || 0,
-    typeId: typeId || null,
-  });
-  const [reductOpen, setReductOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const theme = useTheme();
-
-  const dispatch = useDispatch();
-
-  const handleReductPanel = () => {
-    setReductOpen((vis) => !vis);
-  };
-  const handleDeleteDialog = () => {
-    setDeleteOpen((vis) => !vis);
-  };
-
-  const handleSaveChanges = () => {
-    if (panelData.power <= 0 || panelData.number <= 0 || !panelData.typeId) {
-      Alert.alert("Введіть коректні значення площі та кількості панелей.");
-      return;
-    }
-
-    dispatch(changePanel({ id, ...panelData }))
-      .unwrap()
-      .then(() => Alert.alert("Дані успішно оновлені"))
-      .catch(() => Alert.alert("Помилка при оновленні даних"));
-
-    setReductOpen(false);
-    refresh();
-  };
-
-  const handleDelete = async () => {
-    console.log(id);
-    await dispatch(deletePanel({ id }))
-      .unwrap()
-      .then(() => Alert.alert("Панель успішно видалена"))
-      .catch(() => Alert.alert("Помилка при видаленні панелі"));
-    setDeleteOpen(false);
-    refresh();
-  };
+  const {
+    panelData,
+    setPanelData,
+    reductOpen,
+    deleteOpen,
+    showAlert,
+    handleReductPanel,
+    handleDeleteDialog,
+    handleConfirm,
+    handleSaveChanges,
+    handleDelete,
+    closeReductDialog,
+    closeDeleteDialog,
+  } = usePanelCard({ id, power, number, typeId, refresh });
 
   return (
     <View
-      style={{
-        flexDirection: "column",
-        gap: 10,
-        alignItems: "center",
-        marginHorizontal: 14,
-        marginVertical: 10,
-        paddingTop: 6,
-        paddingBottom: 15,
-        paddingHorizontal: 15,
-        borderRadius: 12,
-      }}
+      style={[styles.container, { borderColor: MyLightTheme.colors.primary }]}
     >
       {reductOpen && (
         <DialogCreation
           visible={reductOpen}
-          hideDialog={() => setReductOpen(false)}
+          hideDialog={closeReductDialog}
           saveChanges={handleSaveChanges}
           title={"Редагування панелі"}
         >
@@ -89,141 +49,109 @@ export default function PanelCard({
           />
         </DialogCreation>
       )}
+
       {deleteOpen && (
         <DeletePanelDialog
           visible={deleteOpen}
-          hideDialog={() => setDeleteOpen(false)}
+          hideDialog={closeDeleteDialog}
           deletePanel={handleDelete}
           panelData={panelData}
           panelTypes={panelTypes}
         />
       )}
-      <LinearGradient
-        colors={[theme.colors.green, theme.colors.greenDark]}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          borderRadius: 10,
-        }}
-      />
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginLeft: 4,
-        }}
-      >
-        <Text
-          style={{
-            flex: 1,
-            fontFamily: "Kurale",
-            fontSize: 22,
-            color: "white",
-          }}
-        >
-          {type}
-        </Text>
+
+      <View style={styles.headerContainer}>
+        <Text style={styles.typeText}>{type}</Text>
         <IconButton
           icon={"pencil"}
           mode="outlined"
           size={20}
-          iconColor={theme.colors.secondary}
-          style={{
-            borderRadius: 10,
-            borderWidth: 2,
-            borderColor: theme.colors.secondary,
-          }}
+          iconColor={MyLightTheme.colors.secondaryDark}
+          style={styles.actionButton}
           onPress={handleReductPanel}
         />
-
         <IconButton
           icon={"delete"}
           mode="outlined"
           size={20}
-          iconColor={theme.colors.primary}
-          style={{
-            borderRadius: 10,
-            borderWidth: 2,
-            borderColor: theme.colors.primary,
-          }}
+          iconColor={MyLightTheme.colors.primary}
+          style={styles.actionButton}
           onPress={handleDeleteDialog}
         />
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 15,
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            width: "47%",
-            borderRadius: 10,
-            borderWidth: 3,
-            borderColor: "white",
-            padding: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: "Kurale",
-              fontSize: 30,
-              textAlign: "center",
-              color: "white",
-              lineHeight: 40,
-            }}
-          >
-            {power} Вт
-          </Text>
-          <Text
-            style={{
-              fontFamily: "Kurale",
-              fontSize: 14,
-              textAlign: "center",
-              color: "white",
-            }}
-          >
-            Потужність
-          </Text>
+
+      <View style={styles.infoContainer}>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoValue}>{power} Вт</Text>
         </View>
 
-        <View
-          style={{
-            width: "47%",
-            borderRadius: 10,
-            borderWidth: 3,
-            borderColor: "white",
-            padding: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: "Kurale",
-              fontSize: 30,
-              textAlign: "center",
-              color: "white",
-              lineHeight: 40,
-            }}
-          >
-            {number}
-          </Text>
-          <Text
-            style={{
-              fontFamily: "Kurale",
-              fontSize: 14,
-              textAlign: "center",
-              color: "white",
-            }}
-          >
-            Панелей
-          </Text>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoValue}>{number} шт</Text>
         </View>
       </View>
+      <CustomAlert
+        message={"Введіть коректні значення площі та кількості панелей."}
+        showAlert={showAlert}
+        onConfirm={handleConfirm}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "column",
+    backgroundColor: MyLightTheme.colors.white,
+    gap: 2,
+    alignItems: "center",
+    marginHorizontal: 4,
+    marginVertical: 10,
+    paddingBottom: 15,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    paddingVertical: 4,
+    shadowColor: MyLightTheme.colors.black,
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginLeft: 14,
+    marginRight: 4,
+  },
+  typeText: {
+    flex: 1,
+    marginLeft: 4,
+    fontFamily: FONTS.Kurale,
+    fontSize: 20,
+    color: MyLightTheme.colors.primaryDark,
+  },
+  actionButton: {
+    borderWidth: 0,
+    width: 28,
+  },
+  infoContainer: {
+    flexDirection: "row",
+    gap: 5,
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  infoBox: {
+    width: "47%",
+    borderRadius: 26,
+    borderBottomWidth: 2,
+    borderColor: MyLightTheme.colors.primaryDark,
+    paddingBottom: 8,
+    paddingTop: 2,
+  },
+  infoValue: {
+    fontFamily: FONTS.Kurale,
+    fontSize: 22,
+    textAlign: "center",
+    color: MyLightTheme.colors.greenDark,
+  },
+});

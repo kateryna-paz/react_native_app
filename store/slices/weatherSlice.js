@@ -1,84 +1,51 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  fetchWeatherData,
+  formatWeatherData,
+} from "../../services/apis/weather";
+import { getErrorMessage } from "../utils/errorHandler";
 
-const weatherKey = process.env.EXPO_PUBLIC_WETHER_KEY;
-const weatherApiKey = process.env.EXPO_PUBLIC_WETHER_API_KEY;
-
-function calculateDaylight(sunrise, sunset) {
-  const toMinutes = (time) => {
-    const [hours, minutesPart] = time.split(":");
-    const minutes = parseInt(minutesPart, 10);
-    const isPM = time.includes("PM");
-    let totalHours = parseInt(hours, 10);
-    if (isPM && totalHours !== 12) totalHours += 12;
-    if (!isPM && totalHours === 12) totalHours = 0;
-    return totalHours * 60 + minutes;
-  };
-
-  const sunriseMinutes = toMinutes(sunrise);
-  const sunsetMinutes = toMinutes(sunset);
-  const totalDaylightMinutes = sunsetMinutes - sunriseMinutes;
-
-  const hours = Math.floor(totalDaylightMinutes / 60);
-  let minutes = totalDaylightMinutes % 60;
-  if (minutes < 10) minutes = `0${minutes}`;
-
-  return { hours, minutes };
-}
+const initialState = {
+  weatherData: null,
+  isLoading: false,
+  error: null,
+};
 
 export const fetchWeather = createAsyncThunk(
   "weather/fetchWeather",
   async (_, { rejectWithValue, getState }) => {
     try {
       const state = getState();
-      const { latitude, longitude } = state.location?.location;
+      const { location } = state.location;
 
-      const weatherRes = await fetch(
-        `http://api.weatherapi.com/v1/forecast.json?key=${weatherApiKey}&q=${latitude},${longitude}&days=1&aqi=no&alerts=no`
+      if (!location?.latitude || !location?.longitude) {
+        throw new Error("Location not available");
+      }
+
+      const weatherData = await fetchWeatherData(
+        location.latitude,
+        location.longitude
       );
 
-      if (!weatherRes.ok) {
-        return rejectWithValue("Не вдалося отримати дані погоди.");
-      }
-
-      const weatherData = await weatherRes?.json();
-
-      const sunrise = weatherData.forecast?.forecastday[0]?.astro?.sunrise;
-      const sunset = weatherData.forecast?.forecastday[0]?.astro?.sunset;
-      const sunsetHours = +sunset.split(":")[0] + 12;
-      const sunsetTime = `${sunsetHours}:${sunset.split(":")[1]}`.split(" ")[0];
-      const daylight = calculateDaylight(sunrise, sunset);
-      const sunDayHours = `${daylight.hours}.${daylight.minutes}`;
-      console.log("Daylight:", daylight);
-
-      const cloudiness = weatherData.forecast?.forecastday[0]?.hour[0]?.cloud;
-      const forecastHours = weatherData.forecast?.forecastday[0]?.hour;
-
-      if (!forecastHours) {
-        return rejectWithValue("Не вдалося отримати дані погоди.");
-      }
-      const hourlyClouds = forecastHours.map((hour) => hour.cloud);
-
-      return {
-        cloudiness,
-        sunDayHours,
-        hourlyClouds,
-        sunrise: sunrise.split(" ")[0],
-        sunset: sunsetTime,
-      };
+      return formatWeatherData(weatherData);
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
 
 const weatherSlice = createSlice({
   name: "weather",
-  initialState: {
-    weatherData: null,
-    isLoading: false,
-    error: null,
+  initialState,
+  reducers: {
+    resetWeatherError: (state) => {
+      state.error = null;
+    },
+    clearWeatherData: (state) => {
+      state.weatherData = null;
+      state.error = null;
+    },
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchWeather.pending, (state) => {
@@ -87,7 +54,7 @@ const weatherSlice = createSlice({
       })
       .addCase(fetchWeather.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.weatherData = { ...action.payload };
+        state.weatherData = action.payload;
         state.error = null;
       })
       .addCase(fetchWeather.rejected, (state, action) => {
@@ -97,4 +64,5 @@ const weatherSlice = createSlice({
   },
 });
 
+export const { resetWeatherError, clearWeatherData } = weatherSlice.actions;
 export default weatherSlice.reducer;

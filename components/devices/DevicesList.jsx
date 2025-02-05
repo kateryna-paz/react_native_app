@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import DeviceCard from "./DeviceCard";
 import { usePathname } from "expo-router";
+import DeviceDistributionCard from "../distribution/DeviceCard";
 
 export default function DevicesList({ devices, refresh }) {
   const currentPath = usePathname();
@@ -16,11 +17,17 @@ export default function DevicesList({ devices, refresh }) {
     );
   }
 
-  if (currentPath === "/energy_distribution") {
+  if (currentPath === "/energy_distribution/list") {
     return (
       <View style={styles.disrtibutionContainer}>
         {devices?.map((device) => {
-          return <DeviceCard data={device} key={device.id} refresh={refresh} />;
+          return (
+            <DeviceDistributionCard
+              data={device}
+              key={device.id}
+              refresh={refresh}
+            />
+          );
         })}
       </View>
     );
@@ -33,13 +40,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     justifyContent: "center",
-    alignItems: "center",
+    paddingTop: 20,
   },
   disrtibutionContainer: {
     flexDirection: "column",
     width: "100%",
+    paddingHorizontal: 8,
     justifyContent: "center",
-
-    gap: 10,
   },
 });

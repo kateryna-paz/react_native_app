@@ -2,12 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { LineChart } from "react-native-gifted-charts";
-import { useTheme } from "react-native-paper";
 import CustomDataPoint from "./CustomDataPoint";
-import setLabel from "../../services/setLabelItemChart";
+import setLabel from "../../utils/setLabelItemChart";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function CloudinessChart({ weatherData }) {
-  const theme = useTheme();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -24,16 +23,16 @@ export default function CloudinessChart({ weatherData }) {
     customDataPoint:
       index === 0 || index === weatherData.length - 1
         ? () => <View />
-        : () => <CustomDataPoint color={theme.colors.greenDark} />,
+        : () => <CustomDataPoint color={MyLightTheme.colors.greenDark} />,
   }));
 
   const chartWidth = Dimensions.get("window").width - 70;
-  const maxValue = 110;
+  const maxValue = 100;
 
   if (isVisible) {
     return (
       <LinearGradient
-        colors={["#e8f5e9", "#c8e6c9"]}
+        colors={[MyLightTheme.colors.white, MyLightTheme.colors.greenLight]}
         style={{
           padding: 10,
           borderRadius: 16,
@@ -42,39 +41,37 @@ export default function CloudinessChart({ weatherData }) {
         <Text
           style={{
             textAlign: "center",
-            fontFamily: "Marmelad",
+            fontFamily: FONTS.Marmelad,
             fontSize: 18,
             marginBottom: 12,
             marginTop: 6,
-            color: theme.colors.textPrimary,
+            color: MyLightTheme.colors.textPrimary,
           }}
         >
           Хмарність по годинах
         </Text>
 
         <LineChart
-          style={{
-            fontSize: 16,
-            fontFamily: "Kurale",
-          }}
           data={cloudinessData}
           width={chartWidth}
           height={220}
-          spacing={chartWidth / cloudinessData.length - 2}
-          initialSpacing={16}
+          spacing={chartWidth / cloudinessData.length - 0.5}
+          initialSpacing={0}
           thickness={5}
           yAxisThickness={0}
           xAxisThickness={1}
-          xAxisColor="#aaa"
+          xAxisColor={MyLightTheme.colors.green}
           yAxisTextStyle={{
-            color: theme.colors.primaryText,
+            color: MyLightTheme.colors.primaryText,
             fontSize: 12,
-            fontFamily: "Kurale",
+            fontFamily: FONTS.Kurale,
           }}
           xAxisLabelTextStyle={{
-            color: "#333",
+            color: MyLightTheme.colors.textPrimary,
             fontSize: 10,
-            fontFamily: "Kurale",
+            width: 28,
+            marginLeft: 10,
+            fontFamily: FONTS.Kurale,
           }}
           isAnimated
           animateOnDataChange
@@ -82,13 +79,13 @@ export default function CloudinessChart({ weatherData }) {
           onDataChangeAnimationDuration={500}
           curved
           areaChart
-          startFillColor={theme.colors.greenLight}
+          startFillColor={MyLightTheme.colors.greenLight}
           startOpacity={0.8}
-          endFillColor={theme.colors.greenTwo}
+          endFillColor={MyLightTheme.colors.greenTwo}
           endOpacity={0.3}
-          color1={theme.colors.green}
+          color1={MyLightTheme.colors.green}
           showVerticalLines
-          verticalLinesColor="#ddd"
+          verticalLinesColor={MyLightTheme.colors.background}
           showStripOnPress
           stripColor="rgba(46, 184, 78, 0.1)"
           noOfSections={5}
@@ -107,13 +104,18 @@ export default function CloudinessChart({ weatherData }) {
                   style={{
                     height: 40,
                     width: 60,
-                    backgroundColor: "#282C3E",
+                    backgroundColor: MyLightTheme.colors.grayDark,
                     borderRadius: 4,
                     justifyContent: "center",
                     paddingLeft: 20,
                   }}
                 >
-                  <Text style={{ color: "white", fontWeight: "bold" }}>
+                  <Text
+                    style={{
+                      color: MyLightTheme.colors.white,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {items[0].value}%
                   </Text>
                 </View>

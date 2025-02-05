@@ -45,7 +45,6 @@ export const regionsUkr = {
   "Sumy Oblast": "Сумська область",
   "Ternopil Oblast": "Тернопільська область",
   "Vinnytsia Oblast": "Вінницька область",
-  "Volyn Oblast": "Волинська область",
   "Zakarpattia Oblast": "Закарпатська область",
   "Zaporizhia Oblast": "Запорізька область",
   "Zhytomyr Oblast": "Житомирська область",

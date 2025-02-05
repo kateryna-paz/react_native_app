@@ -72,7 +72,7 @@ export const useButtonBorderAnimation = (theme) => {
 
   const borderColorInterpolation = buttonBorder.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.blue, theme.colors.primary],
+    outputRange: [MyLightTheme.colors.blue, MyLightTheme.colors.primary],
   });
 
   return { borderColorInterpolation };

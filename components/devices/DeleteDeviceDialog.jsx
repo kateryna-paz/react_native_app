@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import { Button, Dialog, Portal } from "react-native-paper";
 import { importances } from "../../constants/importanceDevices";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function DeleteDeviceDialog({
   visible,
@@ -15,7 +16,7 @@ export default function DeleteDeviceDialog({
     <Portal>
       <Dialog visible={visible} onDismiss={hideDialog} style={styles.dialog}>
         <Dialog.Title style={styles.dialogTitle}>
-          Видалення приладу
+          <Text>Видалення приладу</Text>
         </Dialog.Title>
         <Dialog.Content>
           <Text style={styles.dialogText}>
@@ -58,39 +59,39 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   dialogTitle: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 22,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     textAlign: "center",
   },
   dialogText: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 17,
-    color: "#333",
+    color: MyLightTheme.colors.black,
     marginBottom: 15,
     textAlign: "center",
   },
   deviceInfo: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 16,
-    color: "#555",
+    color: MyLightTheme.colors.black,
     marginBottom: 5,
   },
   boldText: {
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
   },
   button: {
     marginRight: 10,
-    borderColor: "#672ab7",
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     paddingHorizontal: 15,
   },
   deleteButton: {
-    backgroundColor: "#672ab7",
-    borderColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
-    color: "#fff",
+    color: MyLightTheme.colors.white,
     paddingHorizontal: 20,
   },
 });

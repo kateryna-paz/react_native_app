@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axiosInstance from "../../services/axiosConfig";
+import { getErrorMessage } from "../utils/errorHandler";
+import { devicesApi } from "../../services/apis/devices";
 
 export const fetchDevices = createAsyncThunk(
   "devices/fetchDevices",
@@ -14,17 +15,9 @@ export const fetchDevices = createAsyncThunk(
         );
       }
 
-      const response = await axiosInstance.get(`/appliances/userId/${userId}`);
-
-      if (!response) {
-        return null;
-      }
-
-      return response.data;
+      return await devicesApi.fetchUserDevices(userId);
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при отримані даних про ваші прилади." + error
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -35,24 +28,16 @@ export const addDevice = createAsyncThunk(
     try {
       const state = getState();
       const userId = state.auth.user?.id;
+
       if (!userId) {
         return rejectWithValue(
           "Помилка при додаванні приладу, користувач не визначений."
         );
       }
 
-      const response = await axiosInstance.post("/appliances", {
-        name,
-        power,
-        importance,
-        userId,
-      });
-
-      return response.data;
+      return await devicesApi.addDevice({ name, power, importance, userId });
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при додаванні приладу." + error?.message
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -60,29 +45,10 @@ export const addDevice = createAsyncThunk(
 export const updateDevice = createAsyncThunk(
   "devices/updateDevice",
   async ({ id, name, power, importance }, { rejectWithValue }) => {
-    console.log(
-      "id: " +
-        id +
-        " name: " +
-        name +
-        " power: " +
-        power +
-        " importance: " +
-        importance
-    );
     try {
-      const updatedDevice = await axiosInstance.put(`/appliances/${id}`, {
-        name,
-        power,
-        importance,
-      });
-
-      return updatedDevice.data;
+      return await devicesApi.updateDevice({ id, name, power, importance });
     } catch (error) {
-      console.log(error);
-      return rejectWithValue(
-        "Сталася помилка при оновленні приладу. " + error?.message || error
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -91,27 +57,30 @@ export const deleteDevice = createAsyncThunk(
   "devices/deleteDevice",
   async ({ id }, { rejectWithValue }) => {
     try {
-      await axiosInstance.delete(`/appliances/${id}`);
-
-      return id;
+      return await devicesApi.deleteDevice(id);
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при видаленні приладу." + error?.message
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
+const initialState = {
+  devices: null,
+  isLoading: false,
+  error: null,
+};
 
 const devicesSlice = createSlice({
   name: "devices",
-  initialState: {
-    devices: null,
-    isLoading: false,
-    error: null,
+  initialState,
+  reducers: {
+    clearDevicesError: (state) => {
+      state.error = null;
+    },
+    resetDevicesState: () => initialState,
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
+      // Fetch devices
       .addCase(fetchDevices.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -119,12 +88,12 @@ const devicesSlice = createSlice({
       .addCase(fetchDevices.fulfilled, (state, action) => {
         state.devices = action.payload;
         state.isLoading = false;
-        state.error = null;
       })
       .addCase(fetchDevices.rejected, (state, action) => {
         state.error = action.payload;
         state.isLoading = false;
       })
+      // Add device
       .addCase(addDevice.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -132,13 +101,13 @@ const devicesSlice = createSlice({
       .addCase(addDevice.fulfilled, (state, action) => {
         state.devices.push(action.payload);
         state.isLoading = false;
-        state.error = null;
       })
       .addCase(addDevice.rejected, (state, action) => {
         state.error = action.payload;
         state.isLoading = false;
       })
-      .addCase(updateDevice.pending, (state, action) => {
+      // Update device
+      .addCase(updateDevice.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -154,13 +123,12 @@ const devicesSlice = createSlice({
           };
         }
         state.isLoading = false;
-        state.error = null;
       })
       .addCase(updateDevice.rejected, (state, action) => {
         state.error = action.payload;
         state.isLoading = false;
       })
-
+      // Delete device
       .addCase(deleteDevice.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -170,13 +138,13 @@ const devicesSlice = createSlice({
           (device) => device.id !== action.payload
         );
         state.isLoading = false;
-        state.error = null;
       })
       .addCase(deleteDevice.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload;
+        state.isLoading = false;
       });
   },
 });
 
+export const { clearDevicesError, resetDevicesState } = devicesSlice.actions;
 export default devicesSlice.reducer;

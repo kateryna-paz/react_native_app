@@ -1,98 +1,30 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import MyContainer from "../../../components/UI/MyContainer";
-import { useRouter } from "expo-router";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import LocationsButtons from "../../../components/LocationsButtons";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  addLocation,
-  setPermission,
-  setRegisterLocationWithGeo,
-} from "../../../store/slices/locationAndMapSlice";
-import { ActivityIndicator, Icon, useTheme } from "react-native-paper";
-import { registerUser } from "../../../store/slices/authSlice";
-import { addPanel } from "../../../store/slices/panelSlice";
-import { MyLightTheme } from "../../../assets/theme/global";
-import LoadingScreen from "../../../components/UI/LoadingScreen";
+import { ActivityIndicator, Icon } from "react-native-paper";
+import { FONTS, MyLightTheme } from "../../../assets/theme/global";
+import CustomAlert from "../../../components/UI/CustomAlert";
+import { useRegisterLocation } from "../../../hooks/auth/useRegisterLocation";
 
 export default function LocationScreen() {
-  const theme = useTheme();
-  const router = useRouter();
-  const dispatch = useDispatch();
-
-  const [localIsLoading, setLocalIsLoading] = useState(false);
-
-  const { permission, registerLocation, isLoading } = useSelector(
-    (state) => state.location
-  );
   const {
-    user,
-    isLoading: userLoading,
-    error: userError,
-  } = useSelector((state) => state.auth);
-  const {
-    panels,
-    registerPanel,
-    isLoading: isPanelLoading,
-    error,
-  } = useSelector((state) => state.panel);
-  const [location, setLocation] = useState(null);
-
-  const handleRegister = async () => {
-    setLocalIsLoading(true);
-    try {
-      const userResult = await dispatch(registerUser()).unwrap();
-      if (!userResult || userResult?.error) {
-        throw new Error("User registration failed.");
-      }
-
-      const panelResult = await dispatch(
-        addPanel({ ...registerPanel })
-      ).unwrap();
-      if (!panelResult || panelResult?.error) {
-        throw new Error("Panel creation failed.");
-      }
-
-      const locationResult = await dispatch(addLocation()).unwrap();
-      if (!locationResult || locationResult?.error) {
-        throw new Error("Location registration failed.");
-      }
-
-      router.push("/profile");
-    } catch (err) {
-      Alert.alert("Помилка", err || "Щось пішло не так");
-    } finally {
-      setLocalIsLoading(false);
-    }
-  };
-
-  const handleFetchLocation = async () => {
-    try {
-      const result = await dispatch(setRegisterLocationWithGeo()).unwrap();
-      setLocation(result);
-      Alert.alert(
-        "Ваше місцезнаходження",
-        `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.regionName}`
-      );
-    } catch (err) {
-      Alert.alert("Помилка", err || "Щось пішло не так");
-    }
-  };
-
-  useEffect(() => {
-    if (!permission) {
-      dispatch(setPermission());
-    }
-    if (registerLocation) {
-      setLocation(registerLocation);
-    }
-  }, [permission, registerLocation]);
+    location,
+    showAlert,
+    isLoading,
+    handleRegister,
+    handleFetchLocation,
+    handleMapNavigation,
+    handleConfirm,
+  } = useRegisterLocation();
 
   const renderLocationStatus = () => {
     if (isLoading) {
       return (
-        <ActivityIndicator size="small" color={theme.colors.primaryDark} />
+        <ActivityIndicator
+          size="small"
+          color={MyLightTheme.colors.primaryDark}
+        />
       );
     }
 
@@ -113,20 +45,10 @@ export default function LocationScreen() {
     );
   };
 
-  if (localIsLoading) {
-    return (
-      <LoadingScreen
-        colorStart={theme.colors.primaryDark}
-        colorEnd={theme.colors.primaryLight}
-        indicatorColor={theme.colors.white}
-      />
-    );
-  }
-
   return (
     <MyContainer
-      colorStart={theme.colors.primaryDark}
-      colorEnd={theme.colors.primaryLight}
+      colorStart={MyLightTheme.colors.primaryLight}
+      colorEnd={MyLightTheme.colors.secondaryLight}
     >
       <View style={styles.container}>
         <Text style={styles.title}>Останній крок!</Text>
@@ -136,38 +58,30 @@ export default function LocationScreen() {
         <View style={styles.locationContainer}>
           <LocationsButtons
             handleFetchLocation={handleFetchLocation}
-            handleUseMap={() =>
-              router.push({
-                pathname: "/auth/register/map",
-                params: {
-                  // ???
-                  onSaveLocation: () => dispatch(setRegisterLocationWithGeo()),
-                },
-              })
-            }
+            handleUseMap={handleMapNavigation}
           />
           <View style={styles.statusContainer}>{renderLocationStatus()}</View>
         </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.backButton]}
-            onPress={() => router.back()}
-          >
-            <MaterialCommunityIcons
-              name="arrow-left-thin"
-              size={24}
-              color={theme.colors.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.nextButton]}
-            onPress={handleRegister}
-          >
-            <Text style={styles.buttonText}>Завершити реєстрацію</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, styles.nextButton]}
+          onPress={handleRegister}
+        >
+          <Text style={styles.buttonText}>Завершити реєстрацію</Text>
+        </TouchableOpacity>
       </View>
+      <CustomAlert
+        showAlert={showAlert}
+        onConfirm={handleConfirm}
+        onCancel={handleConfirm}
+        showCancelButton={!!location}
+        message={
+          location
+            ? `Широта: ${location.latitude}, \nДовгота: ${location.longitude}, \nВаша область: ${location.regionName}`
+            : "Місцезнаходження не визначено"
+        }
+        title={"Ваше місцезнаходження"}
+      />
     </MyContainer>
   );
 }
@@ -179,11 +93,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   locationContainer: {
-    backgroundColor: MyLightTheme.colors.background,
+    backgroundColor: MyLightTheme.colors.white,
     padding: 14,
     borderRadius: 8,
     marginBottom: 25,
-    shadowColor: "black",
+    shadowColor: MyLightTheme.colors.black,
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
@@ -192,22 +106,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     marginBottom: 8,
-    fontFamily: "Kurale",
+    fontFamily: FONTS.Kurale,
     textAlign: "center",
-    color: "white",
+    color: MyLightTheme.colors.black,
   },
   subtitle: {
     fontSize: 20,
     marginBottom: 20,
     marginHorizontal: 18,
-    fontFamily: "Kurale",
-    color: MyLightTheme.colors.background,
+    fontFamily: FONTS.Kurale,
+    color: MyLightTheme.colors.black,
     textAlign: "center",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
   },
   button: {
     height: 50,
@@ -216,22 +125,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: "row",
     gap: 10,
-  },
-
-  backButton: {
-    width: "20%",
-    borderWidth: 2,
-    borderColor: MyLightTheme.colors.primary,
-    backgroundColor: MyLightTheme.colors.background,
+    marginBottom: 20,
   },
   nextButton: {
-    width: "70%",
+    width: "90%",
     backgroundColor: MyLightTheme.colors.primary,
   },
   buttonText: {
     fontSize: 18,
-    color: "white",
-    fontFamily: "Kurale",
+    color: MyLightTheme.colors.white,
+    fontFamily: FONTS.Kurale,
     lineHeight: 24,
   },
   statusContainer: {
@@ -243,7 +146,7 @@ const styles = StyleSheet.create({
     marginLeft: -8,
   },
   status: {
-    fontFamily: "Kurale",
+    fontFamily: FONTS.Kurale,
     fontSize: 18,
     marginLeft: 10,
   },

@@ -1,65 +1,21 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Alert, StyleSheet } from "react-native";
-import {
-  ActivityIndicator,
-  Button,
-  Icon,
-  IconButton,
-  useTheme,
-} from "react-native-paper";
-import { router } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchLocation,
-  getLocationWithGeo,
-  setPermission,
-} from "../../store/slices/locationAndMapSlice";
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { ActivityIndicator, Icon, IconButton } from "react-native-paper";
+import Animated from "react-native-reanimated";
 import LocationsButtons from "../LocationsButtons";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
+import { useLocationSection } from "../../hooks/profile/useLocationSection";
 
 export default function LocationSection() {
-  const theme = useTheme();
-  const dispatch = useDispatch();
-  const { location, permission, isLoading, error } = useSelector(
-    (state) => state.location
-  );
-
-  const [localLocation, setLocalLocation] = useState(null);
-  const [visibleOptions, setVisibleOptions] = useState(false);
-
-  const openOptions = () => {
-    setVisibleOptions(!visibleOptions);
-  };
-
-  const handleFetchLocation = async () => {
-    try {
-      const result = await dispatch(getLocationWithGeo()).unwrap();
-      Alert.alert(
-        "Ваше місцезнаходження",
-        `Широта: ${result.latitude}, \nДовгота: ${result.longitude}, \nВаша область:  ${result.regionName}`
-      );
-      setVisibleOptions(false);
-    } catch (err) {
-      Alert.alert("Помилка", err);
-    }
-  };
-
-  const handleUseMap = async () => {
-    router.push(`/profile/map`);
-    setVisibleOptions(false);
-  };
-
-  useEffect(() => {
-    if (!permission) {
-      dispatch(setPermission());
-    }
-    if (!location) {
-      dispatch(fetchLocation());
-      setVisibleOptions(false);
-    }
-    if (location) {
-      setLocalLocation(location);
-    }
-  }, [permission, location]);
+  const {
+    localLocation,
+    isLoading,
+    optionsStyle,
+    iconStyle,
+    openOptions,
+    handleFetchLocation,
+    handleUseMap,
+  } = useLocationSection();
 
   return (
     <View style={styles.container}>
@@ -68,8 +24,8 @@ export default function LocationSection() {
       {isLoading ? (
         <ActivityIndicator
           style={{ marginTop: 30, marginBottom: 20 }}
-          size="large"
-          color={theme.colors.secondary}
+          size="small"
+          color={MyLightTheme.colors.primary}
         />
       ) : (
         <>
@@ -81,22 +37,23 @@ export default function LocationSection() {
               </View>
               <View style={styles.option}>
                 <Text style={styles.description}>
-                  Неправильна локація? Змініть
+                  Натисніть, щоб змінити локацію
                 </Text>
-                <IconButton
-                  icon="arrow-down-drop-circle-outline"
-                  size={28}
-                  iconColor={theme.colors.primary}
-                  onPress={openOptions}
-                  style={[styles.icon, visibleOptions && styles.iconRotated]}
-                />
+                <Animated.View style={iconStyle}>
+                  <IconButton
+                    icon="arrow-down-drop-circle-outline"
+                    size={24}
+                    iconColor={MyLightTheme.colors.primary}
+                    onPress={openOptions}
+                  />
+                </Animated.View>
               </View>
-              {visibleOptions && (
+              <Animated.View style={optionsStyle}>
                 <LocationsButtons
                   handleFetchLocation={handleFetchLocation}
                   handleUseMap={handleUseMap}
                 />
-              )}
+              </Animated.View>
             </>
           ) : (
             <>
@@ -116,22 +73,19 @@ export default function LocationSection() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#f5f5f5",
-    padding: 14,
+    paddingHorizontal: 14,
     borderRadius: 8,
-    marginVertical: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
-    elevation: 4,
+    marginVertical: 6,
+    paddingVertical: 8,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: MyLightTheme.colors.secondaryDark,
   },
   title: {
-    fontFamily: "Marmelad",
-    fontSize: 24,
+    fontFamily: FONTS.Marmelad,
+    fontSize: 26,
     marginBottom: 12,
     marginLeft: 2,
   },
@@ -142,7 +96,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   subtitle: {
-    fontFamily: "Kurale",
+    fontFamily: FONTS.Kurale,
     fontSize: 18,
     marginLeft: 10,
   },
@@ -150,45 +104,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginLeft: 10,
-    marginVertical: -8,
-    marginTop: -12,
-  },
-  icon: {
-    transform: [{ rotate: "0deg" }],
-  },
-  iconRotated: {
-    transform: [{ rotate: "180deg" }],
+    marginVertical: -10,
+    marginTop: -14,
   },
   description: {
     fontSize: 16,
-    color: "#666",
+    color: MyLightTheme.colors.grayDark,
     textAlign: "center",
-    fontFamily: "Marmelad",
-    marginBottom: 6,
-  },
-  buttonContent: {
-    flexDirection: "row-reverse",
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    fontFamily: "Kurale",
-    fontSize: 18,
-    lineHeight: 28,
-  },
-  outlinedButton: {
-    marginVertical: 6,
-    marginHorizontal: 10,
-    borderWidth: 2,
-    borderColor: "#ddA500",
-    height: 50,
-  },
-  containedButton: {
-    marginVertical: 6,
-    marginHorizontal: 10,
-    paddingTop: 4,
-    height: 50,
+    fontFamily: FONTS.Marmelad,
+    marginBottom: 3,
   },
 });

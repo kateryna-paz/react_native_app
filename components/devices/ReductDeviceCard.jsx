@@ -24,7 +24,7 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
       setDeviceData(
         (prev) => ({
           ...prev,
-          power: convertToNumeric(value),
+          power: value,
         }),
         [setDeviceData]
       );
@@ -41,21 +41,14 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
 
   const handleYearlyConsumptionChange = useCallback(
     (value) => {
-      const numericValue = convertToNumeric(value);
+      const numericValue = value;
       setDeviceData((prev) => ({
         ...prev,
         power: ((numericValue * 1000) / (24 * 365)).toFixed(2),
       }));
-
-      console.log(deviceData);
     },
     [setDeviceData]
   );
-
-  const convertToNumeric = (value) => {
-    const normalized = value.replace(",", ".");
-    return normalized === "" ? null : Number(normalized);
-  };
 
   return (
     <View

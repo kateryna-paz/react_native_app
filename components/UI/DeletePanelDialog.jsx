@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import { Button, Dialog, Portal } from "react-native-paper";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function DeletePanelDialog({
   visible,
@@ -14,7 +15,9 @@ export default function DeletePanelDialog({
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={hideDialog} style={styles.dialog}>
-        <Dialog.Title style={styles.dialogTitle}>Видалення панелі</Dialog.Title>
+        <Dialog.Title>
+          <Text style={styles.dialogTitle}>Видалення панелі</Text>
+        </Dialog.Title>
         <Dialog.Content>
           <Text style={styles.dialogText}>
             Ви дійсно хочете видалити інформацію про цю панель?
@@ -55,39 +58,40 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   dialogTitle: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 22,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
     textAlign: "center",
   },
   dialogText: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 17,
-    color: "#333",
+    color: MyLightTheme.colors.black,
     marginBottom: 15,
     textAlign: "center",
   },
   panelInfo: {
-    fontFamily: "Marmelad",
+    fontFamily: FONTS.Marmelad,
     fontSize: 16,
-    color: "#555",
+    color: MyLightTheme.colors.black,
     marginBottom: 5,
   },
   boldText: {
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
   },
   button: {
     marginRight: 10,
-    borderColor: "#672ab7",
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
-    color: "#672ab7",
+    color: MyLightTheme.colors.primary,
+    backgroundColor: MyLightTheme.colors.white,
     paddingHorizontal: 15,
   },
   deleteButton: {
-    backgroundColor: "#672ab7",
-    borderColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
+    borderColor: MyLightTheme.colors.primary,
     borderWidth: 1,
-    color: "#fff",
+    color: MyLightTheme.colors.white,
     paddingHorizontal: 20,
   },
 });

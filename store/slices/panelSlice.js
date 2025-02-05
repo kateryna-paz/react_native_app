@@ -1,48 +1,18 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axiosInstance from "../../services/axiosConfig";
-
-const initialState = {
-  panels: null,
-  registerPanel: {
-    power: 0,
-    number: 0,
-    typeId: null,
-  },
-  isLoading: false,
-  error: null,
-};
+import { getErrorMessage } from "../utils/errorHandler";
+import { ensureAuthenticated } from "../utils/authUtils";
+import { panelsApi } from "../../services/apis/panels";
 
 export const fetchPanels = createAsyncThunk(
   "panels/fetchPanels",
   async (_, { rejectWithValue, getState }) => {
     try {
-      const state = getState();
-      const userId = state.auth.user?.id;
+      const userId = ensureAuthenticated(getState);
+      const panels = await panelsApi.fetchUserPanels(userId);
 
-      if (!userId) {
-        return rejectWithValue(
-          "Помилка при отриманні даних, користувач не визначений."
-        );
-      }
-      const response = await axiosInstance.get(`/panels/userId/${userId}`);
-
-      if (!response) {
-        return null;
-      }
-
-      const transformedData = response.data.map((panel) => ({
-        id: panel.id,
-        typeId: panel.typeId.id,
-        type: panel.typeId.type,
-        efficiency: panel.typeId.efficiency,
-        power: panel.power,
-        number: panel.number,
-        userId: panel.userId,
-      }));
-
-      return transformedData;
+      return panels;
     } catch (error) {
-      return rejectWithValue("Помилка при отриманні даних: " + error);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -51,17 +21,16 @@ export const changePanel = createAsyncThunk(
   "panels/changePanel",
   async ({ id, typeId, number, power }, { rejectWithValue }) => {
     try {
-      const updatedPanel = await axiosInstance.put(`/panels/${id}`, {
+      const updatedPanel = await panelsApi.changePanel(
+        id,
         typeId,
         number,
-        power,
-      });
-
-      return updatedPanel.data;
-    } catch (error) {
-      return rejectWithValue(
-        "Помилка при оновленні даних про панель. " + error
+        power
       );
+
+      return updatedPanel;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -70,38 +39,13 @@ export const addPanel = createAsyncThunk(
   "panels/addPanel",
   async ({ typeId, number, power }, { rejectWithValue, getState }) => {
     try {
-      const state = getState();
-      const userId = state.auth.user?.id;
+      const userId = ensureAuthenticated(getState);
 
-      if (!userId) {
-        return rejectWithValue(
-          "Помилка при додаванні нової панелі, користувач не визначений."
-        );
-      }
+      const newPanel = await panelsApi.addPanel(userId, typeId, number, power);
 
-      const newPanel = await axiosInstance.post("/panels", {
-        typeId,
-        number,
-        power,
-        userId,
-      });
-
-      const transformedData = {
-        id: newPanel.data.id,
-        typeId: newPanel.data.typeId.id,
-        type: newPanel.data.typeId.type,
-        efficiency: newPanel.data.typeId.efficiency,
-        power: newPanel.data.power,
-        number: newPanel.data.number,
-        userId: newPanel.data.userId,
-      };
-
-
-      return transformedData;
+      return newPanel;
     } catch (error) {
-      return rejectWithValue(
-        "Помилка при додаванні нової панелі " + error?.message
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -110,22 +54,23 @@ export const deletePanel = createAsyncThunk(
   "panels/deletePanel",
   async ({ id }, { rejectWithValue }) => {
     try {
-      await axiosInstance.delete(`/panels/${id}`);
-      return id;
+      return await panelsApi.deletePanel(id);
     } catch (error) {
-      return rejectWithValue("Помилка при видаленні панелі " + error);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
 
+const initialState = {
+  panels: null,
+  isLoading: false,
+  error: null,
+};
+
 const panelSlice = createSlice({
   name: "panels",
   initialState,
-  reducers: {
-    setRegisterPanel: (state, action) => {
-      state.registerPanel = action.payload;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(changePanel.pending, (state) => {
@@ -205,5 +150,4 @@ const panelSlice = createSlice({
   },
 });
 
-export const { setRegisterPanel } = panelSlice.actions;
 export default panelSlice.reducer;

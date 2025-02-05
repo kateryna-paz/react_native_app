@@ -7,14 +7,17 @@ import {
   RefreshControl,
 } from "react-native";
 import MyContainer from "./MyContainer";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
+import Header from "./Header";
+import AnimatedErrorIcon from "./AnimatedErrorIcon";
 
 export default function ErrorDisplay({
-  colorStart,
-  colorEnd,
+  colorStart = MyLightTheme.colors.primaryLight,
+  colorEnd = MyLightTheme.colors.secondaryLight,
   errorMessage,
   onRefresh,
   refreshing,
-  theme,
+  title,
 }) {
   return (
     <MyContainer colorStart={colorStart} colorEnd={colorEnd}>
@@ -25,30 +28,17 @@ export default function ErrorDisplay({
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View
-          style={[
-            { backgroundColor: theme.colors.background },
-            styles.container,
-          ]}
-        >
+        {title && <Header title={title} />}
+        <View style={styles.container}>
+          <AnimatedErrorIcon />
           <Text
             style={{
-              color: theme.colors.text,
-              fontSize: 26,
-              marginTop: 10,
-              textAlign: "center",
-              fontFamily: "SofiaSansBold",
-            }}
-          >
-            Помилка
-          </Text>
-          <Text
-            style={{
-              color: theme.colors.red,
+              color: MyLightTheme.colors.red,
               fontSize: 18,
               marginTop: 10,
               marginHorizontal: 4,
-              fontFamily: "SofiaSans",
+              fontFamily: FONTS.SofiaSans,
+              textAlign: "center",
             }}
           >
             {errorMessage}
@@ -61,16 +51,12 @@ export default function ErrorDisplay({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 20,
     padding: 14,
     marginHorizontal: 16,
-    marginBottom: 110,
     flex: 1,
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowColor: MyLightTheme.colors.black,
+    display: "flex",
+    alignItems: "center",
   },
   scrollView: {
     flex: 1,

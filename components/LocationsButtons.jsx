@@ -2,6 +2,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Button } from "react-native-paper";
+import { FONTS, MyLightTheme } from "../assets/theme/global";
 
 export default function LocationsButtons({
   handleFetchLocation,
@@ -13,22 +14,26 @@ export default function LocationsButtons({
         mode="outlined"
         onPress={handleFetchLocation}
         contentStyle={styles.buttonContent}
-        textColor={"black"}
+        textColor={MyLightTheme.colors.black}
         style={styles.outlinedButton}
       >
         <Text style={styles.buttonText}>Скористатись геолокацією{"  "}</Text>
-        <FontAwesome name="map-marker" size={21} color="black" />
+        <FontAwesome
+          name="map-marker"
+          size={21}
+          color={MyLightTheme.colors.black}
+        />
       </Button>
       <Button
         mode="contained"
         onPress={handleUseMap}
         contentStyle={styles.buttonContent}
-        buttonColor={"#ddA500"}
-        textColor={"white"}
+        buttonColor={MyLightTheme.colors.warning}
+        textColor={MyLightTheme.colors.white}
         style={styles.containedButton}
       >
         <Text style={styles.buttonText}>Показати на карті{"  "}</Text>
-        <FontAwesome name="map-o" size={20} color="white" />
+        <FontAwesome name="map-o" size={20} color={MyLightTheme.colors.white} />
       </Button>
     </View>
   );
@@ -42,7 +47,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    fontFamily: "Kurale",
+    fontFamily: FONTS.Kurale,
     fontSize: 18,
     lineHeight: 28,
   },
@@ -50,7 +55,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginHorizontal: 10,
     borderWidth: 2,
-    borderColor: "#ddA500",
+    borderColor: MyLightTheme.colors.warning,
     height: 50,
   },
   containedButton: {

@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { View, ImageBackground, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 
 export default function MyContainer({ children, colorStart, colorEnd, style }) {
   return (
@@ -14,6 +14,7 @@ export default function MyContainer({ children, colorStart, colorEnd, style }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 110,
   },
   gradient: {
     position: "absolute",

@@ -7,10 +7,9 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { usePathname } from "expo-router";
-import { useTheme } from "react-native-paper";
+import { MyLightTheme } from "../assets/theme/global";
 
 export default function MyTabBar({ state, descriptors, navigation }) {
-  const theme = useTheme();
   const currentPath = usePathname();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -29,6 +28,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
   const pathToIndexMap = {
     "/home": 0,
     "/energy_distribution": 1,
+    "/energy_distribution/list": 1,
     "/devices": 2,
     "/profile": 3,
   };
@@ -74,7 +74,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
           animatedStyle,
           {
             position: "absolute",
-            backgroundColor: theme.colors.primary,
+            backgroundColor: MyLightTheme.colors.primary,
             marginHorizontal: 14,
             borderRadius: 30,
             height: dimensions.height - 16,
@@ -88,8 +88,8 @@ export default function MyTabBar({ state, descriptors, navigation }) {
           options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
-            ? options.title
-            : route.name;
+              ? options.title
+              : route.name;
 
         const isFocused = state.index === index;
 
@@ -111,7 +111,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
             onLongPress={onLongPress}
             isFocused={isFocused}
             routeName={route.name}
-            color={isFocused ? "white" : "grey"}
+            color={isFocused ? MyLightTheme.colors.white : "grey"}
             label={label}
           />
         );
@@ -130,9 +130,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 10,
-    backgroundColor: "white",
+    backgroundColor: MyLightTheme.colors.white,
     borderRadius: 35,
-    shadowColor: "#000",
+    shadowColor: MyLightTheme.colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 5,

@@ -8,10 +8,11 @@ export const MyLightTheme = {
 
     green: "#2EB84E",
     greenDark: "#1f6228",
-    greenLight: "#eefbf0",
+    greenLight: "#eafced",
     greenTwo: "#5be57b",
 
     primary: "#672ab7",
+    primarySelected: "#7E44C9",
     primaryLight: "#f6efff",
     primaryDark: "#360a70",
 
@@ -19,6 +20,7 @@ export const MyLightTheme = {
     secondaryDark: "#005ba1",
     secondaryLight: "#d7f0ff",
     blue: "#51bbfe",
+    secondaryLight2: "#ecf8ff",
 
     accent: "#991818",
     red: "#ba0b0b",
@@ -43,5 +45,18 @@ export const MyLightTheme = {
     grayDark: "#616161",
     white: "#ffffff",
     black: "#000000",
+
+    transparent: "transparent",
+    darkTransparent: "rgba(0,0,0,0.3)",
   },
 };
+
+export const FONTS = Object.freeze({
+  Rubik: "Rubik",
+  Kurale: "Kurale",
+  SofiaSans: "SofiaSans",
+  SofiaSansBold: "SofiaSansBold",
+  RobotoSlabBold: "RobotoSlabBold",
+  RobotoSlab: "RobotoSlab",
+  Marmelad: "Marmelad",
+});

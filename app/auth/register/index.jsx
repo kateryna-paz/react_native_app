@@ -1,180 +1,207 @@
-import { useState } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
-import {
-  TextInput,
-  Button,
-  ActivityIndicator,
-  Icon,
-  useTheme,
-} from "react-native-paper";
+import { Controller } from "react-hook-form";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { TextInput, Icon } from "react-native-paper";
 import BackButton from "../../../components/UI/BackButton";
-import { useDispatch, useSelector } from "react-redux";
-import { setRegisterUserData } from "../../../store/slices/authSlice";
 import MyContainer from "../../../components/UI/MyContainer";
-import { MyLightTheme } from "../../../assets/theme/global";
+import { FONTS, MyLightTheme } from "../../../assets/theme/global";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
-
-const validateEmail = (email) => {
-  return String(email)
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    );
-};
+import { useRegister } from "../../../hooks/auth/useRegister";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useRef } from "react";
 
 export default function RegisterScreen() {
-  const theme = useTheme();
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const dispatch = useDispatch();
-  const { isLoading, error } = useSelector((state) => state.auth);
-
-  const handleRegister = async () => {
-    if (!validateEmail(email)) {
-      Alert.alert("Невірна електронна пошта");
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert("Пароль має містити не менше 6 символів");
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert("Паролі не співпадають");
-      return;
-    }
-
-    try {
-      await dispatch(setRegisterUserData({ name, email, password })).unwrap();
-      router.push("/auth/register/panel");
-    } catch (err) {
-      Alert.alert("Помилка реєстрації:", err || "Щось пішло не так");
-    }
-  };
+  const { control, errors, isLoading, onSubmit, goLogIn } = useRegister();
+  const scrollRef = useRef(null);
 
   if (isLoading) {
-    return (
-      <LoadingScreen
-        colorStart={theme.colors.primaryDark}
-        colorEnd={theme.colors.primaryLight}
-        indicatorColor={theme.colors.white}
-      />
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <MyContainer
-      colorStart={theme.colors.primaryDark}
-      colorEnd={theme.colors.primaryLight}
+    <KeyboardAwareScrollView
+      keyboardShouldPersistTaps="handled"
+      ref={scrollRef}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollView}
     >
-      <BackButton
-        stylesBtn={styles.backButton}
-        iconColor={theme.colors.white}
-        onPress={() => router.push("/auth")}
-      />
-      <View style={styles.form}>
-        <Text style={styles.title}>Створити акаунт</Text>
-        <TextInput
-          placeholder="Ім'я"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
+      <MyContainer
+        colorStart={MyLightTheme.colors.primaryLight}
+        colorEnd={MyLightTheme.colors.secondaryLight}
+      >
+        <BackButton
+          stylesBtn={styles.backButton}
+          iconColor={MyLightTheme.colors.primaryDark}
         />
-        <TextInput
-          placeholder="Електронна пошта"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          keyboardType="email-address"
-        />
-        <TextInput
-          placeholder="Пароль"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Підтвердження паролю"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          style={styles.input}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Далі</Text>
-          <Icon source="arrow-right-thin" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.loginText}>
-          Вже маєте акаунт?{"  "}
-          <Text
-            style={styles.loginLink}
-            onPress={() => router.push("/auth/login")}
-          >
-            Увійти
+        <View style={styles.form}>
+          <Text style={styles.title}>Створити акаунт</Text>
+
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  placeholder="Ім'я"
+                  value={value}
+                  onChangeText={onChange}
+                  style={styles.input}
+                  error={!!errors.name}
+                />
+                {errors.name && (
+                  <Text style={styles.errorText}>{errors.name.message}</Text>
+                )}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  placeholder="Електронна пошта"
+                  value={value}
+                  onChangeText={onChange}
+                  style={styles.input}
+                  keyboardType="email-address"
+                  error={!!errors.email}
+                />
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email.message}</Text>
+                )}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  placeholder="Пароль"
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry
+                  style={styles.input}
+                  error={!!errors.password}
+                />
+                {errors.password && (
+                  <Text style={styles.errorText}>
+                    {errors.password.message}
+                  </Text>
+                )}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, value } }) => (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  placeholder="Підтвердження паролю"
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry
+                  style={styles.input}
+                  error={!!errors.confirmPassword}
+                />
+                {errors.confirmPassword && (
+                  <Text style={styles.errorText}>
+                    {errors.confirmPassword.message}
+                  </Text>
+                )}
+              </View>
+            )}
+          />
+
+          <TouchableOpacity style={styles.button} onPress={onSubmit}>
+            <Text style={styles.buttonText}>Далі</Text>
+            <Icon source="arrow-right-thin" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          <Text style={styles.loginText}>
+            Вже маєте акаунт?{" "}
+            <Text style={styles.loginLink} onPress={() => goLogIn()}>
+              Увійти
+            </Text>
           </Text>
-        </Text>
-      </View>
-    </MyContainer>
+        </View>
+      </MyContainer>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flexGrow: 1,
+  },
   backButton: {
     position: "absolute",
-    top: 20,
-    left: 20,
-    backgroundColor: MyLightTheme.colors.primaryDark,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: MyLightTheme.colors.white,
+    top: 14,
+    left: 8,
+    backgroundColor: MyLightTheme.colors.transparent,
+    borderWidth: 0,
+    shadowColor: MyLightTheme.colors.transparent,
   },
   form: {
     flex: 1,
+    marginTop: 100,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
   },
   title: {
     fontSize: 32,
-    marginBottom: 20,
-    fontFamily: "Kurale",
-    color: "#fff",
+    marginBottom: 30,
+    fontFamily: FONTS.Kurale,
+    color: MyLightTheme.colors.black,
+  },
+  inputContainer: {
+    width: "100%",
+    height: 72,
+    marginBottom: 15,
   },
   input: {
     width: "100%",
-    marginBottom: 15,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: MyLightTheme.colors.white,
+    color: MyLightTheme.colors.primary,
+  },
+  errorText: {
+    color: MyLightTheme.colors.red,
+    fontSize: 12.5,
+    marginTop: 5,
+    marginLeft: 4,
+    fontFamily: FONTS.SofiaSans,
   },
   button: {
     width: "100%",
     height: 50,
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    marginTop: 5,
+    marginTop: 30,
     marginBottom: 10,
     flexDirection: "row",
     gap: 10,
   },
   buttonText: {
     fontSize: 18,
-    color: "#fff",
-    fontFamily: "Kurale",
+    color: MyLightTheme.colors.white,
+    fontFamily: FONTS.Kurale,
     lineHeight: 24,
   },
   loginText: {
     fontSize: 16,
-    color: "#444",
-    fontFamily: "SofiaSans",
+    color: MyLightTheme.colors.textSecondary,
+    fontFamily: FONTS.SofiaSans,
   },
   loginLink: {
-    color: "#1f6228",
-    fontFamily: "SofiaSansBold",
+    color: MyLightTheme.colors.greenDark,
+    fontFamily: FONTS.SofiaSansBold,
   },
 });

@@ -1,6 +1,4 @@
 import * as React from "react";
-import { Redirect } from "expo-router";
-import { Alert, StyleSheet, View } from "react-native";
 import { Avatar } from "react-native-paper";
 
 function UserAvatar({ size }) {

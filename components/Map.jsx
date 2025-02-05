@@ -1,17 +1,11 @@
 import { useRouter } from "expo-router";
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import {
-  Alert,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
-import { ActivityIndicator, FAB, useTheme } from "react-native-paper";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FAB } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import {
   clearData,
-  getRegionName,
+  clearError,
   setCoordinatesAndFetchAddress,
   setMapMarkerCoordinates,
   setRegisterLocationWithMap,
@@ -20,7 +14,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import ErrorText from "./UI/ErrorText";
 import { MyLightTheme } from "../assets/theme/global";
 import LoadingScreen from "./UI/LoadingScreen";
-import BackButton from "./UI/BackButton";
+import { showToast } from "../utils/showToast";
+import CustomAlert from "./UI/CustomAlert";
+import { getRegionName } from "../store/utils/locationUtils";
 
 const INITIAL_COORDS = {
   latitude: 50.4501,
@@ -30,19 +26,25 @@ const INITIAL_COORDS = {
 };
 
 export default function Map({ forRegister }) {
-  const theme = useTheme();
   const dispatch = useDispatch();
   const router = useRouter();
-  const { params } = router;
-  const onSaveLocation = params?.onSaveLocation;
 
-  const { markerCoords, location, isLoading, error } = useSelector(
+  const { markerCoords, isLoading, error } = useSelector(
     (state) => state.location
   );
 
   const [currentCoords, setCurrentCoords] = useState(null);
   const [isSavingLocation, setIsSavingLocation] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [locationAlert, setLocationAlert] = useState({
+    show: false,
+    message: "",
+    onConfirm: null,
+    onCancel: null,
+  });
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const closeErrorAlert = () => setShowErrorAlert(false);
 
   const finalCoords = useMemo(() => {
     if (markerCoords && markerCoords.latitude && markerCoords.longitude) {
@@ -58,20 +60,22 @@ export default function Map({ forRegister }) {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    clearError();
 
     setTimeout(async () => {
       try {
         dispatch(clearData());
         setCurrentCoords(INITIAL_COORDS);
       } catch (error) {
-        Alert.alert("Помилка", "Не вдалося оновити дані карти.");
+        showToast("error", "Не вдалося оновити дані карти.");
       } finally {
         setRefreshing(false);
       }
     }, 1000);
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
+    clearError();
     if (!currentCoords) {
       setCurrentCoords(finalCoords);
     }
@@ -84,129 +88,162 @@ export default function Map({ forRegister }) {
   const saveLocation = useCallback(async () => {
     try {
       setIsSavingLocation(true);
+      setShowErrorAlert(false);
 
       const region = await getRegionName(
         currentCoords.latitude,
         currentCoords.longitude
       );
 
-      console.log("region: " + region);
+      if (region) {
+        dispatch(setMapMarkerCoordinates(currentCoords));
 
-      if (!region) {
-        Alert.alert(
-          "Помилка",
-          "Не вдалося визначити область для заданих координат. Будь ласка, перевірте, чи відповідає розташування прапорця на карті одній з області України."
-        );
-        return;
-      }
+        let result;
+        if (forRegister) {
+          result = await dispatch(
+            setRegisterLocationWithMap({
+              ...currentCoords,
+              regionName: region,
+            })
+          ).unwrap();
+        } else {
+          result = await dispatch(
+            setCoordinatesAndFetchAddress({
+              ...currentCoords,
+              regionName: region,
+            })
+          ).unwrap();
+        }
 
-      await dispatch(setMapMarkerCoordinates(currentCoords));
-      let result;
-      if (forRegister) {
-        result = await dispatch(
-          setRegisterLocationWithMap({ ...currentCoords, regionName: region })
-        ).unwrap();
-      } else {
-        result = await dispatch(
-          setCoordinatesAndFetchAddress({
-            ...currentCoords,
-            regionName: region,
-          })
-        ).unwrap();
-      }
-
-      Alert.alert(
-        "Ваше місцезнаходження",
-        `Широта: ${result?.latitude}, \nДовгота: ${result?.longitude}, \nВаша область: ${result?.regionName}`,
-        [
-          { text: "Відмінити", style: "cancel" },
-          {
-            text: "ОК",
-            onPress: () => {
-              if (onSaveLocation) onSaveLocation();
+        if (result) {
+          setLocationAlert({
+            show: true,
+            message: `Широта: ${result?.latitude}, \nДовгота: ${result?.longitude}, \nВаша область: ${result?.regionName}`,
+            onConfirm: () => {
+              setLocationAlert((prev) => ({
+                ...prev,
+                show: false,
+              }));
               router.back();
             },
-          },
-        ]
-      );
+            onCancel: () => {
+              setLocationAlert(() => ({ ...locationAlert, show: false }));
+            },
+          });
+        }
+      } else {
+        setShowErrorAlert(true);
+        return;
+      }
     } catch (err) {
-      Alert.alert("Помилка", "Не вдалося зберегти місцезнаходження.");
+      showToast("error", "Не вдалося зберегти місцезнаходження.");
     } finally {
       setIsSavingLocation(false);
     }
-  }, [currentCoords, onSaveLocation, router]);
+  }, [currentCoords, router, dispatch, locationAlert, forRegister]);
 
-  if (error) {
-    return (
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <BackButton
-          stylesBtn={styles.btnBack}
-          iconColor={theme.colors.accent}
-        />
-        <ErrorText error={error} />
-      </ScrollView>
-    );
-  }
-
-  if (isLoading || isSavingLocation || !currentCoords) {
-    return (
-      <LoadingScreen
-        colorStart={theme.colors.secondaryDark}
-        colorEnd={theme.colors.secondaryLight}
-        indicatorColor={theme.colors.white}
-      />
-    );
+  if (!currentCoords) {
+    return <LoadingScreen />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {currentCoords && (
-        <MapView
-          style={styles.map}
-          onRegionChangeComplete={onRegionChangeComplete}
-          initialRegion={currentCoords}
-          region={currentCoords}
-          provider={PROVIDER_GOOGLE}
-        >
-          <Marker
-            coordinate={{
-              latitude: currentCoords.latitude,
-              longitude: currentCoords.longitude,
-            }}
-            title="Your Location"
-            style={styles.marker}
-            draggable
-            onDragEnd={(e) =>
-              setCurrentCoords({
-                ...currentCoords,
-                latitude: e.nativeEvent.coordinate.latitude,
-                longitude: e.nativeEvent.coordinate.longitude,
-              })
+      <>
+        {!error && (
+          <MapView
+            style={styles.map}
+            onRegionChangeComplete={onRegionChangeComplete}
+            initialRegion={currentCoords}
+            region={currentCoords}
+            provider={PROVIDER_GOOGLE}
+          >
+            <Marker
+              coordinate={{
+                latitude: currentCoords.latitude,
+                longitude: currentCoords.longitude,
+              }}
+              title="Your Location"
+              style={styles.marker}
+              draggable
+              onDragEnd={(e) => {
+                const newCoords = {
+                  latitude: e.nativeEvent.coordinate.latitude,
+                  longitude: e.nativeEvent.coordinate.longitude,
+                };
+                if (
+                  newCoords.latitude !== currentCoords.latitude ||
+                  newCoords.longitude !== currentCoords.longitude
+                ) {
+                  setCurrentCoords({ ...currentCoords, ...newCoords });
+                }
+              }}
+            />
+          </MapView>
+        )}
+
+        {error && (
+          <View style={styles.loadingOverlay}>
+            <ErrorText error={error} />
+          </View>
+        )}
+
+        {(isLoading || isSavingLocation || refreshing) && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={MyLightTheme.colors.white} />
+            <Text style={styles.loadingText}>Завантаження...</Text>
+          </View>
+        )}
+
+        <FAB
+          onPress={() => {
+            router.back();
+          }}
+          icon={"arrow-left"}
+          style={styles.btnBack}
+          customSize={46}
+        />
+        <FAB
+          onPress={saveLocation}
+          style={styles.btnSave}
+          label="Зберегти"
+          icon={"check"}
+          customSize={48}
+        />
+        <FAB
+          onPress={onRefresh}
+          icon={"reload"}
+          style={styles.reloadBtn}
+          customSize={46}
+        />
+        {showErrorAlert && (
+          <CustomAlert
+            showAlert={showErrorAlert}
+            title={"Помилка"}
+            message={
+              "Не вдалося визначити область для заданих координат. Будь ласка, перевірте, чи відповідає розташування прапорця на карті одній з області України."
             }
+            onConfirm={closeErrorAlert}
           />
-        </MapView>
-      )}
-      <FAB
-        onPress={() => {
-          router.back();
-        }}
-        icon={"arrow-left"}
-        style={styles.btnBack}
-        customSize={46}
-      />
-      <FAB
-        onPress={saveLocation}
-        style={styles.btnSave}
-        label="Зберегти"
-        icon={"check"}
-        customSize={48}
-      />
+        )}
+        {locationAlert.show && (
+          <CustomAlert
+            showAlert={locationAlert.show}
+            title={"Ваше місцезнаходження"}
+            message={locationAlert.message}
+            showCancelButton
+            onConfirm={() => {
+              if (locationAlert.onConfirm) {
+                locationAlert.onConfirm();
+              }
+            }}
+            onCancel={() => {
+              if (locationAlert.onCancel) {
+                locationAlert.onCancel();
+              }
+            }}
+          />
+        )}
+      </>
     </SafeAreaView>
   );
 }
@@ -223,7 +260,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     margin: 16,
-    backgroundColor: "white",
+    backgroundColor: MyLightTheme.colors.white,
     borderWidth: 3,
     borderColor: MyLightTheme.colors.greenDark,
   },
@@ -233,10 +270,35 @@ const styles = StyleSheet.create({
     top: 0,
     margin: 16,
     marginTop: 19,
-    backgroundColor: "white",
+    backgroundColor: MyLightTheme.colors.white,
+  },
+  reloadBtn: {
+    right: 0,
+    position: "absolute",
+    bottom: 0,
+    margin: 16,
+    backgroundColor: MyLightTheme.colors.white,
+    borderWidth: 3,
+    borderColor: MyLightTheme.colors.primaryDark,
   },
   marker: {
     width: 50,
     height: 50,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: MyLightTheme.colors.darkTransparent,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: MyLightTheme.colors.white,
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: "bold",
   },
 });

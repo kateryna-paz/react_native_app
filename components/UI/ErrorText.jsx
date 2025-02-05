@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function ErrorText({ error }) {
   return (
@@ -13,9 +14,9 @@ export default function ErrorText({ error }) {
     >
       <Text
         style={{
-          color: "red",
+          color: MyLightTheme.colors.red,
           textAlign: "center",
-          fontFamily: "Marmelad",
+          fontFamily: FONTS.Marmelad,
           fontSize: 16,
           marginTop: 20,
         }}

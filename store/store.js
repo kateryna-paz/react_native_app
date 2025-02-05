@@ -1,10 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
+
 import locationReducer from "./slices/locationAndMapSlice";
 import typesReducer from "./slices/typesSlice";
 import panelReducer from "./slices/panelSlice";
+
 import authReducer from "./slices/authSlice";
+
 import weatherReducer from "./slices/weatherSlice";
 import devicesReducer from "./slices/devicesSlice";
+
+import distributeDevicesReducer from "./slices/distributeDevicesSlice";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +19,7 @@ const store = configureStore({
     auth: authReducer,
     weather: weatherReducer,
     devices: devicesReducer,
+    distributeDevices: distributeDevicesReducer,
   },
 });
 

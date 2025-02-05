@@ -1,87 +1,51 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import * as Location from "expo-location";
-import { regionsUkr } from "../../constants/ukrainianRegions";
-import axiosInstance from "../../services/axiosConfig";
-
-export const getRegionName = async (latitude, longitude) => {
-  if (
-    latitude >= 44.3864 &&
-    latitude <= 46.1927 &&
-    longitude >= 32.4919 &&
-    longitude <= 36.6209
-  ) {
-    return "Автономна Республіка Крим";
-  }
-
-  const address = await Location.reverseGeocodeAsync({ latitude, longitude });
-  if (!address || address.length === 0) {
-    throw new Error("Не вдалося визначити область для заданих координат.");
-  }
-
-  const { region } = address[0] || {};
-  return regionsUkr[region] || null;
-};
+import { getErrorMessage } from "../utils/errorHandler";
+import { locationsApi } from "../../services/apis/locations";
+import {
+  getCurrentPosition,
+  getRegionName,
+  requestLocationPermission,
+} from "../utils/locationUtils";
+import { ensureAuthenticated } from "../utils/authUtils";
 
 export const getLocationWithGeo = createAsyncThunk(
   "locationAndMap/getLocationWithGeo",
   async (_, { rejectWithValue, getState }) => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        return rejectWithValue("Дозвіл на використання геолокації не надано.");
-      }
-
-      const { coords } = await Location.getCurrentPositionAsync();
-
-      const { latitude, longitude } = coords;
-
+      await requestLocationPermission();
+      const { latitude, longitude } = await getCurrentPosition();
       const regionInUkrainian = await getRegionName(latitude, longitude);
 
-      const state = getState();
-      const userId = state.auth.user?.id;
+      const userId = ensureAuthenticated(getState);
 
-      if (!userId) {
-        return rejectWithValue(
-          " Помилка при отриманні даних, користувач не визначений."
-        );
-      }
-      const loc = await axiosInstance.get(`/locations/userId/${userId}`);
-
+      const existingLocation = await locationsApi.getUserLocation(userId);
       let location;
 
-      if (loc?.data?.id) {
-        location = await axiosInstance.put(`/locations/${loc.data.id}`, {
+      if (existingLocation?.id) {
+        location = await locationsApi.updateLocation(existingLocation.id, {
           userId,
           coordinates: [latitude, longitude],
           regionName: regionInUkrainian,
         });
       } else {
-        location = await axiosInstance.post(`/locations`, {
+        location = await locationsApi.createLocation({
           userId,
           coordinates: [latitude, longitude],
           regionName: regionInUkrainian,
-          dailyEnergyProduced: [],
         });
       }
 
-      const transformedData = {
-        id: location.data.id,
-        latitude: location.data.coordinates[0],
-        longitude: location.data.coordinates[1],
-        dailyEnergyProduced: location.data.dailyEnergyProduced,
-        regionId: location.data.regionId.id,
-        regionName: location.data.regionId.name,
-        monthlyInsolation: location.data.regionId.monthlyInsolation,
-        yearlyInsolation: location.data.regionId.yearlyInsolation,
-      };
-
-      return transformedData;
+      return locationsApi.transformLocationData(location);
     } catch (error) {
-      return rejectWithValue("Сталася помилка при отриманні місцезнаходження.");
+      return rejectWithValue(
+        getErrorMessage(
+          error,
+          "Сталася помилка при отриманні місцезнаходження."
+        )
+      );
     }
   }
 );
-
 export const setCoordinatesAndFetchAddress = createAsyncThunk(
   "locationAndMap/setCoordinatesAndFetchAddress",
   async (
@@ -91,95 +55,58 @@ export const setCoordinatesAndFetchAddress = createAsyncThunk(
     try {
       if (!regionName) {
         return rejectWithValue(
-          " Не вдалося визначити область для заданих координат."
+          "Не вдалося визначити область для заданих координат."
         );
       }
 
-      const state = getState();
-      const userId = state.auth.user?.id;
+      const userId = ensureAuthenticated(getState);
 
-      if (!userId) {
-        return rejectWithValue(
-          " Помилка при отриманні даних, користувач не визначений."
-        );
-      }
-      const loc = await axiosInstance.get(`/locations/userId/${userId}`);
-
+      const existingLocation = await locationsApi.getUserLocation(userId);
       let location;
 
-      if (!loc || !loc.data || !loc.data.id) {
-        location = await axiosInstance.post(`/locations`, {
+      if (!existingLocation?.id) {
+        location = await locationsApi.createLocation({
           userId,
           coordinates: [latitude, longitude],
-          regionName: regionName,
-          dailyEnergyProduced: [],
+          regionName,
         });
-      } else if (loc.data.id) {
-        location = await axiosInstance.put(`/locations/${loc.data.id}`, {
+      } else {
+        location = await locationsApi.updateLocation(existingLocation.id, {
           userId,
           coordinates: [latitude, longitude],
-          regionName: regionName,
+          regionName,
         });
       }
 
-      const transformedData = {
-        id: location.data.id,
-        latitude: location.data.coordinates[0],
-        longitude: location.data.coordinates[1],
-        dailyEnergyProduced: location.data.dailyEnergyProduced,
-        regionId: location.data.regionId.id,
-        regionName: location.data.regionId.name,
-        monthlyInsolation: location.data.regionId.monthlyInsolation,
-        yearlyInsolation: location.data.regionId.yearlyInsolation,
-      };
-
-      return transformedData;
+      return locationsApi.transformLocationData(location);
     } catch (error) {
-      return rejectWithValue(" Помилка при визначенні адреси. " + error);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
-
 export const addLocation = createAsyncThunk(
   "locationAndMap/addLocation",
   async (_, { rejectWithValue, getState }) => {
     try {
       const state = getState();
-      const userId = state.auth.user?.id;
 
       const loc = state.location.registerLocation;
 
-      console.log("location in addLocation: " + loc);
-
-      if (!userId) {
-        return rejectWithValue(
-          " Помилка при отриманні даних, користувач не визначений."
-        );
+      if (!loc) {
+        return rejectWithValue("Місцезнаходження невдалося визначити.");
       }
 
-      const location = await axiosInstance.post(`/locations`, {
+      const userId = ensureAuthenticated(getState);
+
+      const location = await locationsApi.createLocation({
         userId,
         coordinates: [loc.latitude, loc.longitude],
         regionName: loc.regionName,
-        dailyEnergyProduced: [],
       });
 
-      const transformedData = {
-        id: location.data.id,
-        latitude: location.data.coordinates[0],
-        longitude: location.data.coordinates[1],
-        dailyEnergyProduced: location.data.dailyEnergyProduced,
-        regionId: location.data.regionId.id,
-        regionName: location.data.regionId.name,
-        monthlyInsolation: location.data.regionId.monthlyInsolation,
-        yearlyInsolation: location.data.regionId.yearlyInsolation,
-      };
-
-      return transformedData;
+      return locationsApi.transformLocationData(location);
     } catch (error) {
-      return rejectWithValue(
-        "Помилка при додаванні місцезнаходження. " + error
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -191,9 +118,14 @@ export const setMapMarkerCoordinates = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      return { latitude, longitude, latitudeDelta, longitudeDelta };
+      return {
+        latitude,
+        longitude,
+        latitudeDelta: latitudeDelta || 10,
+        longitudeDelta: longitudeDelta || 10,
+      };
     } catch (error) {
-      return rejectWithValue("Помилка при визначенні локації. " + error);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -202,19 +134,10 @@ export const setPermission = createAsyncThunk(
   "location/setPermission",
   async (_, { rejectWithValue }) => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status === "granted") {
-        return true;
-      } else {
-        return rejectWithValue(
-          "Дозвіл на використання геолокації не надано. Будь ласка увімкніть геолокацію або у Налаштуваннях дайте дозвіл на використання геолокації додатку SolarManager."
-        );
-      }
+      const isGranted = await requestLocationPermission();
+      return isGranted;
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при отриманні дозволу на використання геолокації. Будь ласка увімкніть геолокацію або у Налаштуваннях дайте дозвіл на використання геолокації додатку SolarManager."
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -223,36 +146,16 @@ export const fetchLocation = createAsyncThunk(
   "location/fetchLocation",
   async (_, { rejectWithValue, getState }) => {
     try {
-      const state = getState();
-      const userId = state.auth.user?.id;
+      const userId = ensureAuthenticated(getState);
 
-      if (!userId) {
-        return rejectWithValue(
-          " Помилка при отриманні даних, користувач не визначений."
-        );
-      }
-      const loc = await axiosInstance.get(`/locations/userId/${userId}`);
-
-      console.log("loc: " + loc);
-
-      if (!loc || !loc.data || !loc.data.id) {
+      const location = await locationsApi.getUserLocation(userId);
+      if (!location?.id) {
         return null;
       }
 
-      const transformedData = {
-        id: loc.data.id,
-        latitude: loc.data.coordinates[0],
-        longitude: loc.data.coordinates[1],
-        dailyEnergyProduced: loc.data.dailyEnergyProduced,
-        regionId: loc.data.regionId.id,
-        regionName: loc.data.regionId.name,
-        monthlyInsolation: loc.data.regionId.monthlyInsolation,
-        yearlyInsolation: loc.data.regionId.yearlyInsolation,
-      };
-
-      return transformedData;
+      return locationsApi.transformLocationData(location);
     } catch (error) {
-      return rejectWithValue("Error fetching location: " + error.message);
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -261,21 +164,17 @@ export const setRegisterLocationWithGeo = createAsyncThunk(
   "location/setRegisterLocationWithGeo",
   async (_, { rejectWithValue }) => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        return rejectWithValue("Дозвіл на використання геолокації не надано.");
-      }
-
-      const { coords } = await Location.getCurrentPositionAsync();
-      const { latitude, longitude } = coords;
-
+      await requestLocationPermission();
+      const { latitude, longitude } = await getCurrentPosition();
       const regionInUkrainian = await getRegionName(latitude, longitude);
 
-      return { latitude, longitude, regionName: regionInUkrainian };
+      return {
+        latitude,
+        longitude,
+        regionName: regionInUkrainian,
+      };
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при визначенні місцезнаходження."
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
@@ -286,144 +185,119 @@ export const setRegisterLocationWithMap = createAsyncThunk(
     try {
       return { latitude, longitude, regionName };
     } catch (error) {
-      return rejectWithValue(
-        "Сталася помилка при визначенні місцезнаходження."
-      );
+      return rejectWithValue(getErrorMessage(error));
     }
   }
 );
 
+const initialState = {
+  location: null,
+  markerCoords: null,
+  registerLocation: null,
+  permission: false,
+  isLoading: false,
+  error: null,
+};
+
 const locationAndMapSlice = createSlice({
   name: "locationAndMap",
-  initialState: {
-    location: null,
-    markerCoords: null,
-    registerLocation: null,
-    permission: false,
-    isLoading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     clearData(state) {
       state.error = null;
       state.location = null;
       state.markerCoords = null;
     },
+    clearError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(addLocation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.location = { ...action.payload };
-        state.registerLocation = null;
-        state.error = null;
-      })
-      .addCase(addLocation.pending, (state, action) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(addLocation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(setRegisterLocationWithGeo.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.registerLocation = { ...action.payload };
-        state.error = null;
-      })
-      .addCase(setRegisterLocationWithGeo.pending, (state, action) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(setRegisterLocationWithGeo.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(setRegisterLocationWithMap.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.registerLocation = { ...action.payload };
+    const setPending = (state) => {
+      state.isLoading = true;
+      state.error = null;
+    };
 
-        state.error = null;
-      })
-      .addCase(getLocationWithGeo.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+    const setRejected = (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    };
+
+    const setFulfilled = (state) => {
+      state.isLoading = false;
+      state.error = null;
+    };
+
+    builder
+      .addCase(getLocationWithGeo.pending, setPending)
       .addCase(getLocationWithGeo.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.location = { ...action.payload };
-        state.error = null;
-      })
-      .addCase(getLocationWithGeo.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoading = false;
-      })
-      .addCase(fetchLocation.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchLocation.fulfilled, (state, action) => {
+        setFulfilled(state);
         state.location = action.payload;
-        state.isLoading = false;
-        state.error = null;
       })
-      .addCase(fetchLocation.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoading = false;
-      })
-      .addCase(setCoordinatesAndFetchAddress.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+      .addCase(getLocationWithGeo.rejected, setRejected)
+
+      .addCase(setCoordinatesAndFetchAddress.pending, setPending)
       .addCase(setCoordinatesAndFetchAddress.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.location = { ...action.payload };
+        setFulfilled(state);
+        state.location = action.payload;
         state.markerCoords = {
           latitude: action.payload.latitude,
           longitude: action.payload.longitude,
-          lattitudeDelta: 20,
+          latitudeDelta: 20,
           longitudeDelta: 20,
         };
-        state.error = null;
       })
-      .addCase(setCoordinatesAndFetchAddress.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoading = false;
-      })
+      .addCase(setCoordinatesAndFetchAddress.rejected, setRejected)
 
-      .addCase(setMapMarkerCoordinates.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+      .addCase(addLocation.pending, setPending)
+      .addCase(addLocation.fulfilled, (state, action) => {
+        setFulfilled(state);
+        state.location = action.payload;
+        state.registerLocation = null;
       })
+      .addCase(addLocation.rejected, setRejected)
+
+      .addCase(setRegisterLocationWithGeo.pending, setPending)
+      .addCase(setRegisterLocationWithGeo.fulfilled, (state, action) => {
+        setFulfilled(state);
+        state.registerLocation = action.payload;
+      })
+      .addCase(setRegisterLocationWithGeo.rejected, setRejected)
+
+      .addCase(setRegisterLocationWithMap.pending, setPending)
+      .addCase(setRegisterLocationWithMap.fulfilled, (state, action) => {
+        setFulfilled(state);
+        state.registerLocation = action.payload;
+      })
+      .addCase(setRegisterLocationWithMap.rejected, setRejected)
+
+      .addCase(fetchLocation.pending, setPending)
+      .addCase(fetchLocation.fulfilled, (state, action) => {
+        setFulfilled(state);
+        state.location = action.payload;
+      })
+      .addCase(fetchLocation.rejected, setRejected)
+
+      .addCase(setMapMarkerCoordinates.pending, setPending)
       .addCase(setMapMarkerCoordinates.fulfilled, (state, action) => {
-        state.isLoading = false;
+        setFulfilled(state);
         state.markerCoords = {
           ...action.payload,
           latitudeDelta: action.payload.latitudeDelta || 10,
           longitudeDelta: action.payload.longitudeDelta || 10,
         };
-        state.error = null;
       })
-      .addCase(setMapMarkerCoordinates.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoading = false;
-      })
-      .addCase(setPermission.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+      .addCase(setMapMarkerCoordinates.rejected, setRejected)
+
+      .addCase(setPermission.pending, setPending)
       .addCase(setPermission.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.permission = { ...action.payload };
-        state.error = null;
+        setFulfilled(state);
+        state.permission = action.payload;
       })
-      .addCase(setPermission.rejected, (state, action) => {
-        state.error = action.payload;
-        state.isLoading = false;
-      });
+      .addCase(setPermission.rejected, setRejected);
   },
 });
 
-export const { clearData } = locationAndMapSlice.actions;
+export const { clearData, clearError } = locationAndMapSlice.actions;
 
 export default locationAndMapSlice.reducer;

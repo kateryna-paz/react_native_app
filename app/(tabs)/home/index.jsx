@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
@@ -7,194 +7,83 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
-  Alert,
 } from "react-native";
-import { Icon, useTheme } from "react-native-paper";
+import { Icon } from "react-native-paper";
 import MyContainer from "../../../components/UI/MyContainer";
 import EnergyButton from "../../../components/home/EnergyButton";
-import { useAppData } from "../../../hooks/useAppData";
+import { useAppData } from "../../../hooks/home/useAppData";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
 import ErrorScreen from "../../../components/UI/ErrorScreen";
-import { MyLightTheme } from "../../../assets/theme/global";
+import { FONTS, MyLightTheme } from "../../../assets/theme/global";
 import { router } from "expo-router";
-import useSolarEnergyCalculator from "../../../hooks/useSolarEnergyCalculator";
+import useSolarEnergyCalculator from "../../../hooks/home/useSolarEnergyCalculator";
 import EnergyChart from "../../../components/home/EnergyChart";
 import CloudinessChart from "../../../components/home/CloudinessChart";
+import Header from "../../../components/UI/Header";
+import { AnimatedIcon } from "../../../components/home/AnimatedIcon";
+import CustomAlert from "../../../components/UI/CustomAlert";
+import { useHomeScreen } from "../../../hooks/home/useHomeScreen";
 
 export default function HomeScreen() {
-  const theme = useTheme();
-
-  const [show, setShow] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
   const {
     location,
     panels,
     weatherData,
     panelTypes,
+    isDataMissingCalc,
     isLoading,
     error,
     reloadData,
   } = useAppData();
+
   const { calculateHourlyEnergy } = useSolarEnergyCalculator();
 
-  const [hourlyEnergy, setHourlyEnergy] = useState(null);
-  const [totalEnergy, setTotalEnergy] = useState(null);
-
-  const efficiency = useMemo(() => {
-    if (!panels?.length || !panelTypes?.length) return null;
-
-    const effMono =
-      panelTypes.find((pT) => pT.type === "Монокристалічні").efficiency / 100;
-    const effPoli =
-      panelTypes.find((pT) => pT.type === "Полікристалічні").efficiency / 100;
-    const effAmo =
-      panelTypes.find((pT) => pT.type === "Аморфні").efficiency / 100;
-
-    return {
-      monocristal: effMono,
-      policristal: effPoli,
-      amorfni: effAmo,
-    };
-  }, [panels, panelTypes]);
-
-  const panelsPower = useMemo(() => {
-    if (!panels?.length || !efficiency) return null;
-
-    return panels.reduce(
-      (acc, panel) => {
-        const totalPower = (+panel.number * +panel.power) / 1000;
-        if (panel.type === "Монокристалічні") {
-          acc.monocristal += totalPower * efficiency.monocristal;
-        } else if (panel.type === "Полікристалічні") {
-          acc.policristal += totalPower * efficiency.policristal;
-        } else if (panel.type === "Аморфні") {
-          acc.amorfni += totalPower * efficiency.amorfni;
-        }
-        return acc;
-      },
-      { monocristal: 0, policristal: 0, amorfni: 0 }
-    );
-  }, [panels, efficiency]);
-
-  const insolation = useMemo(() => {
-    if (!location) return 0;
-    const monthNumber = new Date().getMonth();
-    return location.monthlyInsolation[monthNumber];
-  }, [location]);
-
-  const blockAnimations = useMemo(
-    () => Array.from({ length: 3 }, () => new Animated.Value(0)),
-    []
-  );
-
-  const onRefresh = async () => {
-    try {
-      setRefreshing(true);
-      setShow(false);
-      setTotalEnergy(null);
-      await reloadData();
-      blockAnimations.forEach((anim) => anim.setValue(0));
-    } catch (error) {
-      Alert.alert("Помилка оновлення", "Не вдалося оновити дані.");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const startBlockAnimations = useCallback(() => {
-    Animated.stagger(
-      600,
-      blockAnimations.map((animation) =>
-        Animated.timing(animation, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        })
-      )
-    ).start();
-  }, [blockAnimations]);
-
-  const handleCountEnergy = useCallback(() => {
-    setShow(true);
-    if (!weatherData || !location || !panels || panels.length === 0) {
-      Alert.alert(
-        "Недостатньо даних",
-        "Будь ласка, перевірте налаштування панелей та геолокації."
-      );
-      return;
-    }
-
-    const { hourlyEnergy, allEnergy } = calculateHourlyEnergy(
-      weatherData.hourlyClouds,
-      weatherData.sunrise,
-      weatherData.sunset,
-      insolation,
-      panelsPower,
-      panels
-    );
-
-    setHourlyEnergy(hourlyEnergy);
-    setTotalEnergy(allEnergy);
-
-    setTimeout(() => {
-      startBlockAnimations();
-    }, 100);
-  }, [
-    weatherData,
+  const {
+    show,
+    refreshing,
+    showAlert,
+    hourlyEnergy,
+    totalEnergy,
+    blockAnimations,
+    handleCountEnergy,
+    onRefresh,
+    setShowAlert,
+  } = useHomeScreen({
     location,
     panels,
-    insolation,
-    panelsPower,
+    weatherData,
+    panelTypes,
     calculateHourlyEnergy,
-    startBlockAnimations,
-  ]);
-
-  useEffect(() => {
-    blockAnimations.forEach((anim) => {
-      anim.setValue(0);
-    });
-    if (totalEnergy) {
-      startBlockAnimations();
-    }
-  }, [totalEnergy]);
-
-  useEffect(() => {
-    if (!isLoading && show && weatherData && location && panels?.length > 0) {
-      handleCountEnergy();
-    }
-  }, [isLoading, show, handleCountEnergy]);
+    reloadData,
+  });
 
   if (isLoading) {
-    return (
-      <LoadingScreen
-        colorStart={theme.colors.secondaryDark}
-        colorEnd={theme.colors.secondaryLight}
-        indicatorColor={theme.colors.white}
-      />
-    );
+    return <LoadingScreen title={"Головна"} />;
   }
 
-  if (error) {
+  if (error || isDataMissingCalc) {
     return (
       <ErrorScreen
-        colorStart={theme.colors.secondaryDark}
-        colorEnd={theme.colors.secondaryLight}
-        theme={theme}
-        errorMessage={error}
+        errorMessage={
+          error ||
+          "Для розрахунку енергії невистачає даних про локацію або інформації про сонячні панелі"
+        }
         onRefresh={onRefresh}
         refreshing={refreshing}
+        title={"Головна"}
       />
     );
   }
 
   return (
     <MyContainer
-      colorStart={theme.colors.secondaryDark}
-      colorEnd={theme.colors.secondaryLight}
+      colorStart={MyLightTheme.colors.primaryLight}
+      colorEnd={MyLightTheme.colors.secondaryLight}
     >
+      <Header title={"Головна"} />
       <ScrollView
         style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
           <RefreshControl
@@ -202,16 +91,16 @@ export default function HomeScreen() {
             onRefresh={onRefresh}
             enabled={true}
             progressViewOffset={50}
-            progressBackgroundColor={theme.colors.secondaryLight}
-            tintColor={theme.colors.secondaryLight}
-            titleColor={theme.colors.secondaryLight}
+            progressBackgroundColor={MyLightTheme.colors.secondaryLight}
+            tintColor={MyLightTheme.colors.secondaryLight}
+            titleColor={MyLightTheme.colors.secondaryLight}
             refreshingProp={0.4}
           />
         }
       >
         <View style={!show ? styles.buttonContainer : styles.container}>
-          {show && (
-            <ScrollView>
+          {show && !isLoading && (
+            <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.dataContainer}>
                 <Animated.View
                   style={[
@@ -222,8 +111,8 @@ export default function HomeScreen() {
                   <Text
                     style={{
                       fontSize: 18,
-                      color: theme.colors.primaryLight,
-                      fontFamily: "SofiaSans",
+                      color: MyLightTheme.colors.primaryDark,
+                      fontFamily: FONTS.SofiaSans,
                     }}
                   >
                     Очікувана енергія
@@ -241,8 +130,8 @@ export default function HomeScreen() {
                     <Text
                       style={{
                         fontSize: 16,
-                        fontFamily: "SofiaSans",
-                        color: theme.colors.white,
+                        fontFamily: FONTS.SofiaSans,
+                        color: MyLightTheme.colors.black,
                         textAlign: "left",
                       }}
                     >
@@ -252,7 +141,7 @@ export default function HomeScreen() {
                     <Icon
                       source={"arrow-right-thin"}
                       size={20}
-                      color={theme.colors.white}
+                      color={MyLightTheme.colors.black}
                     />
                   </Pressable>
                 </Animated.View>
@@ -271,14 +160,25 @@ export default function HomeScreen() {
             </ScrollView>
           )}
 
-          {!show && (
-            <EnergyButton
-              style={styles.energyButton}
-              onPress={handleCountEnergy}
-              theme={theme}
-            />
+          {!show && !isLoading && (
+            <View>
+              <AnimatedIcon />
+              <EnergyButton
+                style={styles.energyButton}
+                onPress={handleCountEnergy}
+              />
+            </View>
           )}
         </View>
+        <CustomAlert
+          showAlert={showAlert}
+          title={"Недостатньо даних"}
+          onConfirm={() => {
+            setShowAlert(false);
+          }}
+          showCancelButton={false}
+          message={"Будь ласка, перевірте налаштування панелей та геолокації."}
+        />
       </ScrollView>
     </MyContainer>
   );
@@ -288,7 +188,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
     marginHorizontal: 10,
-    marginBottom: 128,
+    marginVertical: 10,
     paddingTop: 2,
     flex: 1,
     justifyContent: "center",
@@ -303,56 +203,31 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   totalEnergyContainer: {
-    borderRadius: 10,
-    padding: 20,
-    backgroundColor: MyLightTheme.colors.primaryDark,
+    borderRadius: 16,
+    paddingHorizontal: 25,
+    paddingVertical: 15,
     borderWidth: 3,
-    borderColor: MyLightTheme.colors.primaryLight,
-    shadowColor: "white",
-    shadowOffset: { width: 2, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 10,
-    width: "100%",
-    marginBottom: 10,
-  },
-  textContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    borderColor: MyLightTheme.colors.primaryDark,
     width: "100%",
   },
   linkContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 10,
-  },
-  headingContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  heading: {
-    fontSize: 20,
-    color: MyLightTheme.colors.primaryDark,
-    fontFamily: "SofiaSansBold",
+    margin: 10,
+    paddingHorizontal: 4,
   },
   text: {
-    fontSize: 24,
+    fontSize: 26,
     marginTop: 14,
     textAlign: "right",
-    color: MyLightTheme.colors.white,
-    fontFamily: "SofiaSansBold",
-  },
-  highlightText: {
     color: MyLightTheme.colors.primary,
-    fontFamily: "SofiaSans",
-    fontSize: 16,
+    fontFamily: FONTS.SofiaSansBold,
   },
   energyButton: {
     backgroundColor: MyLightTheme.colors.secondaryLight,
     marginHorizontal: 20,
-    borderRadius: 30,
+    borderRadius: 10,
     padding: 15,
     shadowColor: MyLightTheme.colors.secondaryDark,
     shadowOffset: { width: 0, height: 4 },

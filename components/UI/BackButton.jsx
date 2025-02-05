@@ -1,21 +1,22 @@
 import React from "react";
-import { useRouter } from "expo-router";
+import { useNavigation } from "expo-router";
 import { FAB } from "react-native-paper";
+import { MyLightTheme } from "../../assets/theme/global";
 
-export default function BackButton({ stylesBtn, onPress, iconColor }) {
-  const router = useRouter();
+export default function BackButton({ stylesBtn, onPress, iconColor, size }) {
+  const navigator = useNavigation();
 
   const handlePress = () => {
     if (onPress) onPress();
-    else router.back();
+    else navigator.goBack();
   };
   return (
     <FAB
       onPress={handlePress}
       icon={"arrow-left"}
-      color={iconColor || "black"}
+      color={iconColor || MyLightTheme.colors.black}
       style={stylesBtn}
-      customSize={46}
+      customSize={50 || size}
     />
   );
 }

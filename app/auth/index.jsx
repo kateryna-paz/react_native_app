@@ -7,6 +7,7 @@ import {
   ImageBackground,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -30,7 +31,11 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/auth/login")}
           >
             <Text
-              style={{ color: "#1f6228", fontFamily: "Kurale", fontSize: 20 }}
+              style={{
+                color: MyLightTheme.colors.greenDark,
+                fontFamily: FONTS.Kurale,
+                fontSize: 20,
+              }}
             >
               Увійти
             </Text>
@@ -40,7 +45,11 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/auth/register")}
           >
             <Text
-              style={{ color: "white", fontFamily: "Kurale", fontSize: 20 }}
+              style={{
+                color: MyLightTheme.colors.white,
+                fontFamily: FONTS.Kurale,
+                fontSize: 20,
+              }}
             >
               Зареєструватись
             </Text>
@@ -66,7 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: MyLightTheme.colors.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -74,29 +83,29 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 42,
-    fontFamily: "Marmelad",
-    color: "black",
+    fontFamily: FONTS.Marmelad,
+    color: MyLightTheme.colors.black,
     marginBottom: 50,
   },
   subtitle: {
     fontSize: 22,
-    fontFamily: "Kurale",
-    color: "#360a70",
+    fontFamily: FONTS.Kurale,
+    color: MyLightTheme.colors.primaryDark,
     marginBottom: 60,
     textAlign: "center",
   },
   logInButton: {
-    backgroundColor: "#eefbf0",
+    backgroundColor: MyLightTheme.colors.white,
     borderWidth: 3,
-    borderColor: "#1f6228",
+    borderColor: MyLightTheme.colors.greenDark,
     marginBottom: 20,
     marginLeft: 10,
     marginRight: 40,
   },
   registerButton: {
-    backgroundColor: "#672ab7",
+    backgroundColor: MyLightTheme.colors.primary,
     borderWidth: 3,
-    borderColor: "#360a70",
+    borderColor: MyLightTheme.colors.primaryDark,
     marginLeft: 40,
   },
 });

@@ -62,8 +62,6 @@ export default function useSolarEnergyCalculator() {
 
       const energyForGraph = [startEnergy, ...hourlyEnergy];
 
-      console.log(energyForGraph);
-
       setAllEnergy(totalEnergyAccumulator.toFixed(2));
 
       return { hourlyEnergy: energyForGraph, allEnergy };

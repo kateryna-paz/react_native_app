@@ -6,7 +6,9 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@babel/plugin-transform-class-properties": "^7.25.9",
@@ -14,6 +16,7 @@
     "@babel/plugin-transform-optional-chaining": "^7.25.9",
     "@expo/metro-runtime": "~4.0.0",
     "@expo/vector-icons": "^14.0.4",
+    "@hookform/resolvers": "^3.10.0",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@reduxjs/toolkit": "^2.3.0",
     "axios": "^1.7.7",
@@ -28,14 +31,18 @@
     "expo-splash-screen": "^0.29.18",
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.6",
+    "lottie-react-native": "^7.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
     "react-native": "^0.76.5",
+    "react-native-awesome-alerts": "^2.0.0",
     "react-native-config": "^1.5.3",
     "react-native-elements": "^3.4.3",
     "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-gifted-charts": "^1.4.47",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "^1.18.0",
     "react-native-paper": "^5.12.5",
@@ -44,15 +51,28 @@
     "react-native-screens": "~4.1.0",
     "react-native-select-dropdown": "^4.0.1",
     "react-native-svg": "^15.8.0",
+    "react-native-toast-message": "^2.2.1",
     "react-native-web": "~0.19.10",
     "react-redux": "^9.1.2",
     "redux": "^5.0.1",
     "redux-thunk": "^3.1.0",
     "rimraf": "^6.0.1",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "yup": "^1.6.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@react-native-community/eslint-config": "^3.2.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-native": "^5.0.0",
+    "prettier": "^3.4.2",
+    "prop-types": "^15.8.1",
+    "typescript": "^5.3.3"
   },
   "private": true
 }

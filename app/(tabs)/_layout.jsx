@@ -1,18 +1,13 @@
 import { Tabs } from "expo-router";
 import MyTabBar from "../../components/TabBar";
 import { StyleSheet } from "react-native";
-import { shadow, useTheme } from "react-native-paper";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default () => {
-  const theme = useTheme();
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.secondaryDark,
-          shadowColor: "transparent",
-          elevation: 0,
-        },
+        headerShown: false,
       }}
       tabBar={(props) => <MyTabBar {...props} />}
     >
@@ -54,8 +49,8 @@ export default () => {
 
 const styles = StyleSheet.create({
   header: {
-    fontFamily: "Kurale",
+    fontFamily: FONTS.Kurale,
     fontSize: 26,
-    color: "white",
+    color: MyLightTheme.colors.white,
   },
 });

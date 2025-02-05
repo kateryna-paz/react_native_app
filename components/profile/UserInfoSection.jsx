@@ -1,26 +1,25 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import UserAvatar from "./UserAvatar";
+import { FONTS, MyLightTheme } from "../../assets/theme/global";
 
 export default function UserInfoSection({ user }) {
   return (
     <View style={styles.container}>
-      <UserAvatar size={96} />
       <View style={styles.info}>
         <Text
           style={{
-            fontFamily: "SofiaSansBold",
-            fontSize: 28,
-            marginLeft: 14,
+            fontFamily: FONTS.SofiaSansBold,
+            fontSize: 34,
+            color: MyLightTheme.colors.primary,
           }}
         >
           {user ? user?.name : "Guest"}
         </Text>
         <Text
           style={{
-            fontFamily: "Marmelad",
-            fontSize: 17,
-            color: "grey",
+            fontFamily: FONTS.Marmelad,
+            fontSize: 18,
+            color: MyLightTheme.colors.primaryDark,
           }}
         >
           {user ? user?.email : "email@gmail.com"}
@@ -32,26 +31,16 @@ export default function UserInfoSection({ user }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "bottom",
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 16,
+    margin: 10,
+    marginTop: 28,
     borderRadius: 8,
-    marginVertical: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
-    elevation: 4,
   },
   info: {
-    marginLeft: 16,
     marginBottom: 14,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 6,
   },
 });
