@@ -68,7 +68,7 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
       >
         <MyInput
           label="Назва приладу"
-          initialValue={deviceData.name?.toString() ?? ""}
+          value={deviceData.name?.toString() ?? ""}
           onChangeText={handleNameChange}
           keyboardType="default"
           width={"100%"}
@@ -87,7 +87,7 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
         {selectedMetric === "power" && (
           <MyInput
             label="Споживча потужність (Вт)"
-            initialValue={deviceData.power?.toString() ?? ""}
+            value={deviceData.power?.toString() ?? ""}
             onChangeText={handlePowerChange}
             keyboardType="numeric"
             width={"100%"}
@@ -97,7 +97,7 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
         {selectedMetric === "yearlyConsumption" && (
           <MyInput
             label="Річне споживання (кВт·год)"
-            initialValue={deviceData.power?.toString() ?? ""}
+            value={deviceData.power?.toString() ?? ""}
             onChangeText={handleYearlyConsumptionChange}
             keyboardType="numeric"
             width={"100%"}

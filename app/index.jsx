@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import { Redirect } from "expo-router";
+import useAuthStore from "../store/authStore";
 
 export default function App() {
-  const { isLoggedIn } = useSelector((state) => state.auth);
+  const { isLoggedIn } = useAuthStore();
   const [path, setPath] = useState("");
 
   useEffect(() => {

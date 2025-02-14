@@ -54,7 +54,7 @@ export default function MyTabBar({ state, descriptors, navigation }) {
         duration: 1700,
       });
     }
-  }, [currentPath, buttonWidth]);
+  }, [currentPath, buttonWidth, pathToIndexMap]);
 
   const onTabbarLayout = (e) => {
     setDimensions({

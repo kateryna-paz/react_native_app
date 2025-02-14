@@ -1,103 +1,160 @@
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchLocation,
-  setPermission,
-} from "../../store/slices/locationAndMapSlice";
-import { useEffect, useCallback, useMemo } from "react";
-import { fetchPanelTypes } from "../../store/slices/typesSlice";
-import { fetchWeather } from "../../store/slices/weatherSlice";
-import { fetchPanels } from "../../store/slices/panelSlice";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
+import useAuthStore from "../../store/authStore";
+import usePanelTypesStore from "../../store/panelTypesStore";
+import usePanelsStore from "../../store/panelsStore";
+import useLocationStore from "../../store/locationAndMapStore";
+import useWeatherStore from "../../store/weatherStore";
 
 export const useAppData = () => {
-  const dispatch = useDispatch();
   const router = useRouter();
+
+  const [hadLoadingError, setHadLoadingError] = useState(false);
 
   const {
     user,
     isLoading: isUserLoading,
     error,
-  } = useSelector((state) => state.auth);
+    logoutUser,
+    initializeAuth,
+  } = useAuthStore();
   const {
     location,
     permission,
     isLoading: isLocationLoading,
     error: locationError,
-  } = useSelector((state) => state.location);
+    fetchLocation,
+    setPermission,
+  } = useLocationStore();
   const {
     panels,
     isLoading: isPanelsLoading,
     error: panelsError,
-  } = useSelector((state) => state.panel);
-  const {
-    panelTypes,
-    isLoading: isTypesLoading,
-    typesError,
-  } = useSelector((state) => state.panelTypes);
+    fetchPanels,
+  } = usePanelsStore();
+  const { panelTypes, isTypesLoading, errorTypes, fetchPanelTypes } =
+    usePanelTypesStore();
   const {
     weatherData,
     isLoading: isWeatherLoading,
     error: weatherError,
-  } = useSelector((state) => state.weather);
+    fetchWeather,
+  } = useWeatherStore();
 
-  const isDataMissingCalc = useMemo(() => {
-    return !location || !panels || panels.length === 0;
-  }, [location, panels]);
+  const isLoading =
+    isUserLoading ||
+    isLocationLoading ||
+    isPanelsLoading ||
+    isTypesLoading ||
+    isWeatherLoading;
+
+  const checkDataCompleteness = useCallback(() => {
+    return Boolean(location && panels && panelTypes && weatherData);
+  }, [location, panels, panelTypes, weatherData]);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      setHadLoadingError(false);
+
+      if (!user || !user.id) {
+        await initializeAuth();
+      }
+
+      if (!permission) {
+        await setPermission();
+      }
+
+      if (!panelTypes) await fetchPanelTypes();
+      if (!panels) await fetchPanels();
+
+      if (!location) {
+        await fetchLocation();
+      }
+
+      if (location && !weatherData) await fetchWeather();
+    } catch (error) {
+      console.error("Error loading initial data:", error);
+      setHadLoadingError(true);
+    }
+  }, [
+    permission,
+    location,
+    panelTypes,
+    panels,
+    weatherData,
+    setPermission,
+    fetchLocation,
+    fetchPanelTypes,
+    fetchPanels,
+    fetchWeather,
+    user,
+    initializeAuth,
+  ]);
 
   const reloadData = useCallback(async () => {
     try {
-      if (!permission) {
-        dispatch(setPermission());
-      }
-      if (!location) dispatch(fetchLocation());
-
-      dispatch(fetchPanelTypes());
-
-      if (user?.id) {
-        dispatch(fetchPanels());
-      }
-
-      if (!isDataMissingCalc) {
-        dispatch(fetchWeather());
-      }
+      await loadInitialData();
     } catch (error) {
       console.error("Error reloading app data:", error);
     }
-  }, [location, permission, user?.id, isDataMissingCalc]);
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      checkDataCompleteness();
+    }
+  }, [isLoading, checkDataCompleteness]);
+
+  useEffect(() => {
+    if (user) {
+      fetchPanels();
+    }
+  }, [user, fetchPanels]);
 
   useEffect(() => {
     if (error === "Помилка авторизації") {
-      router.push("/auth");
+      (async () => {
+        await logoutUser();
+        router.push("/auth");
+      })();
     }
-  }, [error]);
+  }, [error, router, logoutUser]);
 
-  useEffect(() => {
-    if (!permission) dispatch(setPermission());
-  }, [permission]);
+  const errorMsg = useMemo(() => {
+    if (isLoading) return null;
 
-  useEffect(() => {
-    if (!location) dispatch(fetchLocation());
-    if (!panelTypes) dispatch(fetchPanelTypes());
-    if (!panels && user?.id) dispatch(fetchPanels());
-    if (!isDataMissingCalc && !weatherData) {
-      dispatch(fetchWeather());
+    if (hadLoadingError) {
+      return (
+        error ||
+        locationError ||
+        panelsError ||
+        weatherError ||
+        errorTypes ||
+        "Дані не завантажені"
+      );
     }
-  }, [weatherData, isDataMissingCalc, location, panelTypes, panels, user?.id]);
+    return null;
+  }, [
+    isLoading,
+    hadLoadingError,
+    error,
+    locationError,
+    panelsError,
+    weatherError,
+    errorTypes,
+  ]);
 
   return {
-    user,
     location,
-    weatherData,
     panels,
+    weatherData,
     panelTypes,
-    isDataMissingCalc,
-    isLoading:
-      isUserLoading ||
-      isLocationLoading ||
-      isPanelsLoading ||
-      isTypesLoading ||
-      isWeatherLoading,
-    error: error || locationError || panelsError || typesError || weatherError,
+    isLoading,
+    error: errorMsg,
     reloadData,
   };
 };

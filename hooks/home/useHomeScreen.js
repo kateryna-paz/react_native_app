@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Animated } from "react-native";
-import { useDispatch } from "react-redux";
 import { showToast } from "../../utils/showToast";
-import { setTotalDistributeEnergy } from "../../store/slices/distributeDevicesSlice";
+import useDistributeDevicesStore from "../../store/distributeStore";
 
 export const useHomeScreen = ({
   location,
@@ -12,12 +11,13 @@ export const useHomeScreen = ({
   calculateHourlyEnergy,
   reloadData,
 }) => {
-  const dispatch = useDispatch();
   const [show, setShow] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [hourlyEnergy, setHourlyEnergy] = useState(null);
   const [totalEnergy, setTotalEnergy] = useState(null);
+
+  const { setTotalDistributeEnergy } = useDistributeDevicesStore();
 
   const efficiency = useMemo(() => {
     if (!panels?.length || !panelTypes?.length) return null;
@@ -55,11 +55,10 @@ export const useHomeScreen = ({
     );
   }, [panels, efficiency]);
 
-  const insolation = useMemo(() => {
-    if (!location) return 0;
-    const monthNumber = new Date().getMonth();
-    return location.monthlyInsolation[monthNumber];
-  }, [location]);
+  const insolation = useMemo(
+    () => location?.monthlyInsolation?.[new Date().getMonth()] || 0,
+    [location]
+  );
 
   const blockAnimations = useMemo(
     () => Array.from({ length: 3 }, () => new Animated.Value(0)),
@@ -80,41 +79,60 @@ export const useHomeScreen = ({
     ).start();
   }, [blockAnimations]);
 
+  const checkData = useCallback(() => {
+    if (!location)
+      return showToast("error", "Помилка: Дані про локацію відсутні"), false;
+    if (!panels.length || !panelTypes.length)
+      return (
+        showToast("error", "Помилка: Немає даних про сонячні панелі"), false
+      );
+    if (
+      !weatherData?.hourlyClouds ||
+      !weatherData?.sunrise ||
+      !weatherData?.sunset
+    ) {
+      return showToast("error", "Помилка: Немає погодних даних"), false;
+    }
+    return true;
+  }, [location, weatherData, panels, panelTypes]);
+
   const handleCountEnergy = useCallback(() => {
-    setShow(true);
-    if (!weatherData || !location || !panels || panels.length === 0) {
+    if (!checkData()) {
       setShowAlert(true);
       return;
     }
+    setShow(true);
 
     const { hourlyEnergy, allEnergy } = calculateHourlyEnergy(
       weatherData.hourlyClouds,
       weatherData.sunrise,
       weatherData.sunset,
       insolation,
-      panelsPower,
-      panels
+      panelsPower
     );
 
-    dispatch(setTotalDistributeEnergy(allEnergy));
-
+    setTotalDistributeEnergy(allEnergy);
     setHourlyEnergy(hourlyEnergy);
     setTotalEnergy(allEnergy);
   }, [
-    weatherData,
-    location,
-    panels,
+    checkData,
     insolation,
     panelsPower,
+    weatherData,
     calculateHourlyEnergy,
-    dispatch,
+    setTotalDistributeEnergy,
+    setHourlyEnergy,
+    setTotalEnergy,
   ]);
 
   const onRefresh = async () => {
     try {
       setRefreshing(true);
       setTotalEnergy(null);
+      setShow(false);
+
       await reloadData();
+
       blockAnimations.forEach((anim) => anim.setValue(0));
     } catch (error) {
       showToast("error", "Не вдалося оновити дані.");
@@ -124,19 +142,25 @@ export const useHomeScreen = ({
   };
 
   useEffect(() => {
-    blockAnimations.forEach((anim) => {
-      anim.setValue(0);
-    });
+    if (show) {
+      handleCountEnergy();
+      startBlockAnimations();
+    }
+  }, [show, handleCountEnergy, startBlockAnimations]);
+
+  useEffect(() => {
     if (totalEnergy && show) {
       startBlockAnimations();
     }
-  }, [totalEnergy, blockAnimations, startBlockAnimations]);
+  }, [totalEnergy, startBlockAnimations, show]);
 
   useEffect(() => {
-    if (weatherData && location && panels?.length > 0 && show) {
-      handleCountEnergy();
+    if (!panels.length || !weatherData || !location) {
+      setShow(false);
+      setTotalEnergy(null);
+      setHourlyEnergy(null);
     }
-  }, [handleCountEnergy, location, panels, weatherData]);
+  }, [panels, weatherData, location]);
 
   return {
     show,

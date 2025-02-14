@@ -17,6 +17,7 @@ export const getRegionName = async (latitude, longitude) => {
   }
 
   const { region } = address[0] || {};
+
   return regionsUkr[region] || null;
 };
 

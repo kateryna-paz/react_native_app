@@ -1,17 +1,21 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
 import { panelSchema } from "../../utils/validation.schemas";
 import { useForm } from "react-hook-form";
-import { addPanel } from "../../store/slices/panelSlice";
 import { useEffect } from "react";
-import { fetchPanelTypes } from "../../store/slices/typesSlice";
 import { showToast } from "../../utils/showToast";
+import usePanelTypesStore from "../../store/panelTypesStore";
+import usePanelsStore from "../../store/panelsStore";
 
 export const usePanelForm = () => {
-  const dispatch = useDispatch();
   const router = useRouter();
-  const { panelTypes } = useSelector((state) => state.panelTypes);
+  const { panelTypes, fetchPanelTypes } = usePanelTypesStore();
+
+  const { addPanel } = usePanelsStore();
+
+  useEffect(() => {
+    fetchPanelTypes();
+  }, [fetchPanelTypes]);
 
   const {
     control,
@@ -43,13 +47,11 @@ export const usePanelForm = () => {
         const isValid = await trigger();
 
         if (isValid) {
-          const panelResult = await dispatch(
-            addPanel({
-              ...data,
-              power: Number(data.power),
-              number: Number(data.number),
-            })
-          ).unwrap();
+          const panelResult = await addPanel({
+            ...data,
+            power: Number(data.power),
+            number: Number(data.number),
+          });
 
           if (!panelResult || panelResult?.error) {
             showToast("error", panelResult?.error || "Виникла помилка");
@@ -74,10 +76,6 @@ export const usePanelForm = () => {
   const handleTypeChange = (typeId) => {
     setValue("typeId", typeId);
   };
-
-  useEffect(() => {
-    dispatch(fetchPanelTypes());
-  }, [dispatch]);
 
   return {
     control,

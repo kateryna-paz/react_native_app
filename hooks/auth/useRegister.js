@@ -1,15 +1,13 @@
 import { useForm } from "react-hook-form";
 import { registerSchema } from "../../utils/validation.schemas";
-import { useDispatch, useSelector } from "react-redux";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
-import { registerUser } from "../../store/slices/authSlice";
 import { showToast } from "../../utils/showToast";
+import useAuthStore from "../../store/authStore";
 
 export const useRegister = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { isLoading } = useSelector((state) => state.auth);
+  const { isLoading, registerUser } = useAuthStore();
 
   const {
     control,
@@ -32,14 +30,11 @@ export const useRegister = () => {
 
   const handleRegistration = async (data) => {
     try {
-      const userResult = await dispatch(
-        registerUser({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        })
-      ).unwrap();
-
+      const userResult = await registerUser(
+        data.name,
+        data.email,
+        data.password
+      );
       if (!userResult || userResult?.error) {
         showToast(
           "error",

@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState, useEffect, useCallback } from "react";
 import { router } from "expo-router";
 import {
   withTiming,
@@ -7,18 +6,18 @@ import {
   useSharedValue,
   interpolate,
 } from "react-native-reanimated";
-import {
-  fetchLocation,
-  getLocationWithGeo,
-  setPermission,
-} from "../../store/slices/locationAndMapSlice";
 import { showToast } from "../../utils/showToast";
+import useLocationStore from "../../store/locationAndMapStore";
 
 export const useLocationSection = () => {
-  const dispatch = useDispatch();
-  const { location, permission, isLoading } = useSelector(
-    (state) => state.location
-  );
+  const {
+    location,
+    getLocationWithGeo,
+    isLoading,
+    permission,
+    setPermission,
+    fetchLocation,
+  } = useLocationStore();
 
   const [localLocation, setLocalLocation] = useState(null);
   const [visibleOptions, setVisibleOptions] = useState(false);
@@ -40,10 +39,13 @@ export const useLocationSection = () => {
     ],
   }));
 
-  const animateOptions = (show, duration = 500) => {
-    animationProgress.value = withTiming(show ? 1 : 0, { duration });
-    iconRotation.value = withTiming(show ? 1 : 0, { duration });
-  };
+  const animateOptions = useCallback(
+    (show, duration = 500) => {
+      animationProgress.value = withTiming(show ? 1 : 0, { duration });
+      iconRotation.value = withTiming(show ? 1 : 0, { duration });
+    },
+    [animationProgress, iconRotation]
+  );
 
   const openOptions = () => {
     const newValue = !visibleOptions;
@@ -51,15 +53,27 @@ export const useLocationSection = () => {
     animateOptions(newValue);
   };
 
-  const closeOptions = (duration = 300) => {
-    setVisibleOptions(false);
-    animateOptions(false, duration);
-  };
+  const closeOptions = useCallback(
+    (duration = 300) => {
+      setVisibleOptions(false);
+      animateOptions(false, duration);
+    },
+    [animateOptions, setVisibleOptions]
+  );
 
   const handleFetchLocation = async () => {
     try {
-      await dispatch(setPermission()).unwrap();
-      await dispatch(getLocationWithGeo()).unwrap();
+      await setPermission();
+      await getLocationWithGeo();
+
+      if (
+        !localLocation ||
+        location?.latitude !== localLocation?.latitude ||
+        location?.longitude !== localLocation?.longitude
+      ) {
+        setLocalLocation(location);
+      }
+
       showToast("success", "Локацію успішно змінено!");
       closeOptions();
     } catch (err) {
@@ -74,16 +88,16 @@ export const useLocationSection = () => {
 
   useEffect(() => {
     if (!permission) {
-      dispatch(setPermission());
+      setPermission();
     }
     if (!location) {
-      dispatch(fetchLocation());
+      fetchLocation();
       closeOptions(0);
     }
     if (location) {
       setLocalLocation(location);
     }
-  }, [permission, location]);
+  }, [permission, location, setPermission, fetchLocation, closeOptions]);
 
   return {
     localLocation,

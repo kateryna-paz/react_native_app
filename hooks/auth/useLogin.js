@@ -1,15 +1,13 @@
 import { useForm } from "react-hook-form";
 import { loginSchema } from "../../utils/validation.schemas";
-import { useDispatch, useSelector } from "react-redux";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
-import { loginUser } from "../../store/slices/authSlice";
 import { showToast } from "../../utils/showToast";
+import useAuthStore from "../../store/authStore";
 
 export const useLogin = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { isLoading } = useSelector((state) => state.auth);
+  const { isLoading, loginUser } = useAuthStore();
 
   const {
     control,
@@ -30,12 +28,7 @@ export const useLogin = () => {
 
   const handleLogin = async (data) => {
     try {
-      await dispatch(
-        loginUser({
-          email: data.email,
-          password: data.password,
-        })
-      ).unwrap();
+      await loginUser(data.email, data.password);
 
       router.push("/profile");
     } catch (error) {

@@ -2,11 +2,6 @@ import axiosInstance from "../axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const authApi = {
-  checkExistingEmail: async (email) => {
-    const response = await axiosInstance.get(`/users/email/${email}`);
-    return response.data;
-  },
-
   register: async (userData) => {
     const response = await axiosInstance.post("/users/register", userData);
     return response.data;
@@ -28,6 +23,11 @@ const authApi = {
   getUserData: async () => {
     const user = await AsyncStorage.getItem("user");
     const token = await AsyncStorage.getItem("token");
+
+    if (token) {
+      authApi.setAuthToken(token);
+    }
+
     return { user: user ? JSON.parse(user) : null, token };
   },
 

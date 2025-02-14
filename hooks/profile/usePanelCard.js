@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { changePanel, deletePanel } from "../../store/slices/panelSlice";
 import { showToast } from "../../utils/showToast";
+import usePanelsStore from "../../store/panelsStore";
 
 export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
   const [panelData, setPanelData] = useState({
@@ -13,7 +12,7 @@ export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
-  const dispatch = useDispatch();
+  const { changePanel, deletePanel } = usePanelsStore();
 
   const handleReductPanel = () => {
     setReductOpen((prev) => !prev);
@@ -41,7 +40,7 @@ export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
         return;
       }
 
-      await dispatch(changePanel({ id, ...panelData })).unwrap();
+      await changePanel({ id, ...panelData });
       showToast("success", "Дані успішно оновлені");
       setReductOpen(false);
       refresh();
@@ -52,7 +51,7 @@ export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
 
   const handleDelete = async () => {
     try {
-      await dispatch(deletePanel({ id })).unwrap();
+      await deletePanel(id);
       showToast("success", "Панель успішно видалена");
       setDeleteOpen(false);
       refresh();

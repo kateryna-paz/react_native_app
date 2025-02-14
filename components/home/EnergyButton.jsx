@@ -33,8 +33,8 @@ const useButtonBorderAnimation = () => {
   return { borderColorInterpolation };
 };
 
-export default function EnergyButton({ onPress, theme, style }) {
-  const { borderColorInterpolation } = useButtonBorderAnimation(theme);
+export default function EnergyButton({ onPress, style }) {
+  const { borderColorInterpolation } = useButtonBorderAnimation();
 
   return (
     <Animated.View

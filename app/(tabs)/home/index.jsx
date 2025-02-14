@@ -30,7 +30,6 @@ export default function HomeScreen() {
     panels,
     weatherData,
     panelTypes,
-    isDataMissingCalc,
     isLoading,
     error,
     reloadData,
@@ -57,11 +56,17 @@ export default function HomeScreen() {
     reloadData,
   });
 
+  console.log("location", location);
+  console.log("panels", panels);
+  console.log("weatherData", weatherData);
+  console.log("panelTypes", panelTypes);
+  console.log("isLoading", isLoading);
+
   if (isLoading) {
     return <LoadingScreen title={"Головна"} />;
   }
 
-  if (error || isDataMissingCalc) {
+  if (error) {
     return (
       <ErrorScreen
         errorMessage={
@@ -176,7 +181,6 @@ export default function HomeScreen() {
           onConfirm={() => {
             setShowAlert(false);
           }}
-          showCancelButton={false}
           message={"Будь ласка, перевірте налаштування панелей та геолокації."}
         />
       </ScrollView>

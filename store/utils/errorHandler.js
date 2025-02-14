@@ -5,5 +5,6 @@ export const getErrorMessage = (error, customError) => {
   if (customError) {
     return customError;
   }
-  return "Виникла невідома помилка";
+  console.log("getError message: ", error);
+  return " Виникла невідома помилка. Перевірте з'єднання з інтернетом";
 };

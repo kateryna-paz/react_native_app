@@ -2,38 +2,46 @@ import { useRouter } from "expo-router";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator, FAB } from "react-native-paper";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  clearData,
-  clearError,
-  setCoordinatesAndFetchAddress,
-  setMapMarkerCoordinates,
-  setRegisterLocationWithMap,
-} from "../store/slices/locationAndMapSlice";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ErrorText from "./UI/ErrorText";
 import { MyLightTheme } from "../assets/theme/global";
 import LoadingScreen from "./UI/LoadingScreen";
 import { showToast } from "../utils/showToast";
 import CustomAlert from "./UI/CustomAlert";
 import { getRegionName } from "../store/utils/locationUtils";
+import useLocationStore from "../store/locationAndMapStore";
 
 const INITIAL_COORDS = {
   latitude: 50.4501,
   longitude: 30.5234,
-  latitudeDelta: 25,
-  longitudeDelta: 25,
+  latitudeDelta: 20,
+  longitudeDelta: 20,
 };
 
 export default function Map({ forRegister }) {
-  const dispatch = useDispatch();
   const router = useRouter();
 
-  const { markerCoords, isLoading, error } = useSelector(
-    (state) => state.location
-  );
+  const {
+    location,
+    markerCoords,
+    isLoading,
+    error,
+    clearError,
+    setCoordinatesAndFetchAddress,
+    setRegisterLocationWithMap,
+    setMapMarkerCoordinates,
+  } = useLocationStore();
 
-  const [currentCoords, setCurrentCoords] = useState(null);
+  const [currentCoords, setCurrentCoords] = useState(
+    location
+      ? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 20,
+          longitudeDelta: 20,
+        }
+      : markerCoords
+  );
   const [isSavingLocation, setIsSavingLocation] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -46,40 +54,35 @@ export default function Map({ forRegister }) {
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const closeErrorAlert = () => setShowErrorAlert(false);
 
-  const finalCoords = useMemo(() => {
-    if (markerCoords && markerCoords.latitude && markerCoords.longitude) {
-      return {
-        latitude: markerCoords.latitude,
-        longitude: markerCoords.longitude,
-        latitudeDelta: markerCoords.latitudeDelta || 25,
-        longitudeDelta: markerCoords.longitudeDelta || 25,
-      };
-    }
-    return INITIAL_COORDS;
-  }, [markerCoords]);
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     clearError();
 
     setTimeout(async () => {
       try {
-        dispatch(clearData());
         setCurrentCoords(INITIAL_COORDS);
+        setMapMarkerCoordinates(INITIAL_COORDS);
       } catch (error) {
         showToast("error", "Не вдалося оновити дані карти.");
       } finally {
         setRefreshing(false);
       }
     }, 1000);
-  }, [dispatch]);
+  }, [clearError, setMapMarkerCoordinates]);
 
   useEffect(() => {
     clearError();
-    if (!currentCoords) {
-      setCurrentCoords(finalCoords);
+    if (!currentCoords && location) {
+      setCurrentCoords({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 20,
+        longitudeDelta: 20,
+      });
+    } else if (!currentCoords && !location) {
+      setCurrentCoords(markerCoords);
     }
-  }, [finalCoords, currentCoords]);
+  }, [currentCoords, clearError]);
 
   const onRegionChangeComplete = (region) => {
     setCurrentCoords(region);
@@ -96,41 +99,34 @@ export default function Map({ forRegister }) {
       );
 
       if (region) {
-        dispatch(setMapMarkerCoordinates(currentCoords));
+        setMapMarkerCoordinates(currentCoords);
 
-        let result;
         if (forRegister) {
-          result = await dispatch(
-            setRegisterLocationWithMap({
-              ...currentCoords,
-              regionName: region,
-            })
-          ).unwrap();
+          await setRegisterLocationWithMap({
+            ...currentCoords,
+            regionName: region,
+          });
         } else {
-          result = await dispatch(
-            setCoordinatesAndFetchAddress({
-              ...currentCoords,
-              regionName: region,
-            })
-          ).unwrap();
-        }
-
-        if (result) {
-          setLocationAlert({
-            show: true,
-            message: `Широта: ${result?.latitude}, \nДовгота: ${result?.longitude}, \nВаша область: ${result?.regionName}`,
-            onConfirm: () => {
-              setLocationAlert((prev) => ({
-                ...prev,
-                show: false,
-              }));
-              router.back();
-            },
-            onCancel: () => {
-              setLocationAlert(() => ({ ...locationAlert, show: false }));
-            },
+          await setCoordinatesAndFetchAddress({
+            ...currentCoords,
+            regionName: region,
           });
         }
+
+        setLocationAlert({
+          show: true,
+          message: `Широта: ${currentCoords?.latitude}, \nДовгота: ${currentCoords?.longitude}, \nВаша область: ${region}`,
+          onConfirm: () => {
+            setLocationAlert((prev) => ({
+              ...prev,
+              show: false,
+            }));
+            router.back();
+          },
+          onCancel: () => {
+            setLocationAlert(() => ({ ...locationAlert, show: false }));
+          },
+        });
       } else {
         setShowErrorAlert(true);
         return;
@@ -140,9 +136,17 @@ export default function Map({ forRegister }) {
     } finally {
       setIsSavingLocation(false);
     }
-  }, [currentCoords, router, dispatch, locationAlert, forRegister]);
+  }, [
+    currentCoords,
+    router,
+    locationAlert,
+    forRegister,
+    setCoordinatesAndFetchAddress,
+    setMapMarkerCoordinates,
+    setRegisterLocationWithMap,
+  ]);
 
-  if (!currentCoords) {
+  if (!currentCoords || !markerCoords) {
     return <LoadingScreen />;
   }
 

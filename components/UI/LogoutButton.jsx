@@ -7,21 +7,20 @@ import {
   Button,
   Paragraph,
 } from "react-native-paper";
-import { useDispatch } from "react-redux";
-import { logoutUser } from "../../store/slices/authSlice";
 import { useRouter } from "expo-router";
+import useAuthStore from "../../store/authStore";
 
 export default function LogoutButton({ styles }) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
-  const dispatch = useDispatch();
+  const { logoutUser } = useAuthStore();
 
   const showDialog = () => setVisible(true);
   const hideDialog = () => setVisible(false);
 
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser());
+      await logoutUser();
       hideDialog();
       router.push("/auth");
     } catch (e) {

@@ -1,6 +1,17 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+
+const listeners = new Set();
+
+export const authEvents = {
+  subscribe: (listener) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+  emit: (event) => {
+    listeners.forEach((listener) => listener(event));
+  },
+};
 
 const axiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_BASE_URL + process.env.EXPO_PUBLIC_API_URL,
@@ -9,6 +20,16 @@ const axiosInstance = axios.create({
 const getAuthToken = async () => {
   const token = await AsyncStorage.getItem("token");
   return token ? `Bearer ${token}` : null;
+};
+
+const handleLogout = async () => {
+  try {
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("refreshToken");
+    authEvents.emit("unauthorized");
+  } catch (error) {
+    console.error("Error during logout:", error);
+  }
 };
 
 axiosInstance.interceptors.request.use(async (config) => {
@@ -23,15 +44,7 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      try {
-        await AsyncStorage.removeItem("token");
-        await AsyncStorage.removeItem("refreshToken");
-
-        const navigation = useNavigation();
-        navigation.navigate("/auth/login");
-      } catch (logoutError) {
-        console.error("Error during logout:", logoutError);
-      }
+      await handleLogout();
     }
     return Promise.reject(error);
   }

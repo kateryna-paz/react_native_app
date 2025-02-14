@@ -1,49 +1,24 @@
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import MyContainer from "../../../components/UI/MyContainer";
-import { FONTS, MyLightTheme } from "../../../assets/theme/global";
-import { useDispatch, useSelector } from "react-redux";
+import { MyLightTheme } from "../../../assets/theme/global";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
-import { useEffect, useState } from "react";
-import { fetchDevices } from "../../../store/slices/devicesSlice";
 import DevicesList from "../../../components/devices/DevicesList";
 import ErrorScreen from "../../../components/UI/ErrorScreen";
 import BackButton from "../../../components/UI/BackButton";
-import { showToast } from "../../../utils/showToast";
-import { useRouter } from "expo-router";
+import Header from "../../../components/UI/Header";
+import AnimatedText from "../../../components/distribution/AnimatedText";
+import { useListDistribute } from "../../../hooks/distribute/useListDistribute";
 
-export default function DistibutionScreen() {
-  const dispatch = useDispatch();
-  const router = useRouter();
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const { devices, isLoading, error } = useSelector((state) => state.devices);
-  const { selectedDevices } = useSelector((state) => state.distributeDevices);
-
-  const refresh = async () => {
-    try {
-      setRefreshing(true);
-      dispatch(fetchDevices());
-    } catch (err) {
-      showToast("error", "Упс... Сталася помилка при оновленні даних.");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    dispatch(fetchDevices());
-  }, [dispatch]);
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+export default function DistributionScreen() {
+  const {
+    selectedDevices,
+    unselectedDevices,
+    isLoading,
+    error,
+    refreshing,
+    refresh,
+    handleToggleSelectDevice,
+  } = useListDistribute();
 
   if (error) {
     return (
@@ -54,27 +29,33 @@ export default function DistibutionScreen() {
       />
     );
   }
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <MyContainer
       colorStart={MyLightTheme.colors.primaryLight}
       colorEnd={MyLightTheme.colors.secondaryLight}
     >
+      <Header title={"Розподіл енергії"} />
       <BackButton
         stylesBtn={{
           position: "absolute",
           zIndex: 10,
           top: 12,
-          left: 16,
+          left: 12,
           backgroundColor: MyLightTheme.colors.transparent,
           shadowColor: MyLightTheme.colors.transparent,
           elevation: 0,
         }}
         iconColor={MyLightTheme.colors.primary}
-        onPress={() => router.push("/energy_distribution")}
       />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -88,10 +69,28 @@ export default function DistibutionScreen() {
           />
         }
       >
+        <AnimatedText text={"Працюючі прилади"} />
+
         <View style={styles.container}>
-          <Text style={styles.text}>Працюючі прилади</Text>
-          {devices && devices.length > 0 && (
-            <DevicesList devices={selectedDevices} refresh={refresh} />
+          {selectedDevices?.length > 0 ? (
+            <DevicesList
+              devices={selectedDevices}
+              toggleSelect={handleToggleSelectDevice}
+              selected
+            />
+          ) : (
+            <AnimatedText style={styles.smallText} text={"Таких немає"} />
+          )}
+
+          <AnimatedText text={"Непрацюючі прилади"} />
+
+          {unselectedDevices?.length > 0 ? (
+            <DevicesList
+              devices={unselectedDevices}
+              toggleSelect={handleToggleSelectDevice}
+            />
+          ) : (
+            <AnimatedText style={styles.smallText} text={"Таких немає"} />
           )}
         </View>
       </ScrollView>
@@ -102,18 +101,12 @@ export default function DistibutionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 110,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
-  text: {
-    fontSize: 20,
-    textAlign: "center",
-    color: MyLightTheme.colors.black,
-    fontFamily: FONTS.Kurale,
-    lineHeight: 28,
-    marginBottom: 20,
+  smallText: {
+    fontSize: 16,
+    color: MyLightTheme.colors.textSecondary,
   },
   scrollView: {
     flex: 1,

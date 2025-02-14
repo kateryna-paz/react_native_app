@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addDevice, fetchDevices } from "../../store/slices/devicesSlice";
 import { importances } from "../../constants/importanceDevices";
 import { showToast } from "../../utils/showToast";
+import useDevicesStore from "../../store/devicesStore";
 
 export const useDevices = () => {
-  const dispatch = useDispatch();
-  const { devices, isLoading, error } = useSelector((state) => state.devices);
+  const { fetchDevices, addDevice, devices, isLoading, error } =
+    useDevicesStore();
 
   const [deviceData, setDeviceData] = useState({
     name: "",
@@ -27,14 +26,12 @@ export const useDevices = () => {
         setShowAlert(true);
         return;
       }
-      await dispatch(
-        addDevice({
-          ...deviceData,
-          importance: importances
-            .find((imp) => imp.id === deviceData.importanceId)
-            .type.toLocaleLowerCase(),
-        })
-      ).unwrap();
+      await addDevice({
+        ...deviceData,
+        importance: importances
+          .find((imp) => imp.id === deviceData.importanceId)
+          .type.toLocaleLowerCase(),
+      });
       showToast("success", "Новий прилад успішно додано!");
       resetDeviceData();
       await refresh();
@@ -46,7 +43,7 @@ export const useDevices = () => {
   const refresh = async () => {
     try {
       setRefreshing(true);
-      await dispatch(fetchDevices());
+      fetchDevices();
     } catch (_) {
       showToast("error", "Упс... Сталася помилка при оновленні даних.");
     } finally {
@@ -60,8 +57,8 @@ export const useDevices = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchDevices());
-  }, [dispatch]);
+    fetchDevices();
+  }, [fetchDevices]);
 
   return {
     devices,

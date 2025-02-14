@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Icon } from "react-native-paper";
 import { FONTS, MyLightTheme } from "../../assets/theme/global";
+import useDistributeDevicesStore from "../../store/distributeStore";
 
 export default function DeviceTitle({ item, onToggleSelect }) {
-  const [isSelected, setIsSelected] = useState(false);
+  const { selectedDevices } = useDistributeDevicesStore();
+
+  const selectedItem = selectedDevices.find((dev) => dev.id === item.id);
+
+  const [isSelected, setIsSelected] = useState(!!selectedItem);
 
   const handlePress = () => {
     setIsSelected((prev) => !prev);

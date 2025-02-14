@@ -55,14 +55,14 @@ export default function ReductPanelCard({
       <View style={styles.inputContainer}>
         <MyInput
           label="Потужність (Вт)"
-          initialValue={panelData.power?.toString() ?? ""}
+          value={panelData.power?.toString() ?? ""}
           onChangeText={handlePowerChange}
           styles={styles.firstInput}
         />
 
         <MyInput
           label="Кількість"
-          initialValue={panelData.number?.toString() ?? ""}
+          value={panelData.number?.toString() ?? ""}
           onChangeText={handleNumberChange}
           styles={styles.secondInput}
         />

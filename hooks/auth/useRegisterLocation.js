@@ -1,23 +1,21 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
 import { showToast } from "../../utils/showToast";
-import {
-  addLocation,
-  setPermission,
-  setRegisterLocationWithGeo,
-} from "../../store/slices/locationAndMapSlice";
+import useLocationStore from "../../store/locationAndMapStore";
 
 export const useRegisterLocation = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
+  const {
+    addLocation,
+    setRegisterLocationWithGeo,
+    setPermission,
+    isLoading,
+    permission,
+    registerLocation,
+  } = useLocationStore();
 
   const [location, setLocation] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
-
-  const { permission, registerLocation, isLoading } = useSelector(
-    (state) => state.location
-  );
 
   const handleRegister = async () => {
     if (!registerLocation) {
@@ -25,7 +23,7 @@ export const useRegisterLocation = () => {
       return;
     }
     try {
-      const locationResult = await dispatch(addLocation()).unwrap();
+      const locationResult = await addLocation();
       if (!locationResult || locationResult?.error) {
         showToast(
           "error",
@@ -41,7 +39,7 @@ export const useRegisterLocation = () => {
 
   const handleFetchLocation = async () => {
     try {
-      const result = await dispatch(setRegisterLocationWithGeo()).unwrap();
+      const result = await setRegisterLocationWithGeo();
       setLocation(result);
       setShowAlert(true);
     } catch (err) {
@@ -53,7 +51,7 @@ export const useRegisterLocation = () => {
     router.push({
       pathname: "/auth/register/map",
       params: {
-        onSaveLocation: () => dispatch(setRegisterLocationWithGeo()),
+        onSaveLocation: () => setRegisterLocationWithGeo(),
       },
     });
   };
@@ -64,7 +62,7 @@ export const useRegisterLocation = () => {
 
   useEffect(() => {
     if (!permission) {
-      dispatch(setPermission());
+      setPermission();
     }
     if (registerLocation) {
       setLocation(registerLocation);

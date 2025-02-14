@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { deleteDevice, updateDevice } from "../../store/slices/devicesSlice";
 import { importances } from "../../constants/importanceDevices";
 import { showToast } from "../../utils/showToast";
+import useDevicesStore from "../../store/devicesStore";
 
 export const useDeviceCard = (data, refresh) => {
-  const dispatch = useDispatch();
+  const { deleteDevice, updateDevice } = useDevicesStore();
 
   const [deviceData, setDeviceData] = useState({
     name: data.name || "",
@@ -43,16 +42,14 @@ export const useDeviceCard = (data, refresh) => {
         return;
       }
 
-      await dispatch(
-        updateDevice({
-          id: data.id,
-          importance: importances
-            .find((imp) => imp.id === deviceData.importanceId)
-            ?.type.toLowerCase(),
-          power: deviceData.power,
-          name: deviceData.name,
-        })
-      ).unwrap();
+      await updateDevice({
+        id: data.id,
+        importance: importances
+          .find((imp) => imp.id === deviceData.importanceId)
+          ?.type.toLowerCase(),
+        power: deviceData.power,
+        name: deviceData.name,
+      });
       showToast("success", "Прилад успішно оновлено");
     } catch (e) {
       showToast("error", "Помилка при оновленні приладу");
@@ -64,7 +61,7 @@ export const useDeviceCard = (data, refresh) => {
 
   const handleDeleteDevice = async () => {
     try {
-      await dispatch(deleteDevice({ ...data })).unwrap();
+      await deleteDevice(data.id);
       showToast("success", "Прилад успішно видалено");
     } catch (e) {
       showToast("error", "Помилка при видаленні приладу");

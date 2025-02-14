@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Animated } from "react-native";
+import { MyLightTheme } from "../../assets/theme/global";
 
 export const useIconAnimation = () => {
   const translateY = useRef(new Animated.Value(0)).current;
@@ -47,7 +48,7 @@ export const useIconAnimation = () => {
   return { translateY, rotateInterpolation };
 };
 
-export const useButtonBorderAnimation = (theme) => {
+export const useButtonBorderAnimation = () => {
   const buttonBorder = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

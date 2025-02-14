@@ -31,7 +31,7 @@ export default function CustomSwitch({
 
     return {
       backgroundColor: colorValue,
-      borderRadius: height.value / 2,
+      borderRadius: height.value ? height.value / 2 : 30,
     };
   });
 
@@ -45,7 +45,7 @@ export default function CustomSwitch({
 
     return {
       transform: [{ translateX: translateValue }],
-      borderRadius: height.value / 2,
+      borderRadius: height.value ? height.value / 2 : 30,
     };
   });
 
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   thumb: {
-    height: "101%",
+    height: "100%",
     aspectRatio: 1,
     backgroundColor: MyLightTheme.colors.white,
     shadowColor: MyLightTheme.colors.black,

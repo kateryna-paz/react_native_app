@@ -1,23 +1,19 @@
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addPanel, fetchPanels } from "../../store/slices/panelSlice";
-import { fetchPanelTypes } from "../../store/slices/typesSlice";
 import { showToast } from "../../utils/showToast";
+import usePanelTypesStore from "../../store/panelTypesStore";
+import usePanelsStore from "../../store/panelsStore";
 
 export const usePanelsInfo = ({ user }) => {
-  const dispatch = useDispatch();
-
   const {
     panels,
     isLoading: isPanelLoading,
     error,
-  } = useSelector((state) => state.panel);
+    fetchPanels,
+    addPanel,
+  } = usePanelsStore();
 
-  const {
-    panelTypes,
-    isLoading: isTypesLoading,
-    errorTypes,
-  } = useSelector((state) => state.panelTypes);
+  const { panelTypes, isTypesLoading, errorTypes, fetchPanelTypes } =
+    usePanelTypesStore();
 
   const [panelData, setPanelData] = useState({
     power: null,
@@ -33,7 +29,7 @@ export const usePanelsInfo = ({ user }) => {
   };
 
   const refresh = async () => {
-    dispatch(fetchPanels());
+    fetchPanels();
   };
 
   const handleAddPanel = async () => {
@@ -43,7 +39,7 @@ export const usePanelsInfo = ({ user }) => {
         return;
       }
 
-      await dispatch(addPanel(panelData)).unwrap();
+      await addPanel(panelData);
       showToast("success", "Нова панель успішно додана!");
 
       setPanelData({ power: null, number: null, typeId: null });
@@ -56,10 +52,10 @@ export const usePanelsInfo = ({ user }) => {
 
   useEffect(() => {
     if (user?.id || error) {
-      dispatch(fetchPanels());
-      dispatch(fetchPanelTypes());
+      fetchPanels();
+      fetchPanelTypes();
     }
-  }, [dispatch, user?.id]);
+  }, [user?.id]);
 
   const closeAddDialog = () => setOpenAddDialog(false);
   const openAddPanelDialog = () => setOpenAddDialog(true);

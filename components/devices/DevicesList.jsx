@@ -3,8 +3,18 @@ import { View, StyleSheet } from "react-native";
 import DeviceCard from "./DeviceCard";
 import { usePathname } from "expo-router";
 import DeviceDistributionCard from "../distribution/DeviceCard";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 
-export default function DevicesList({ devices, refresh }) {
+export default function DevicesList({
+  devices,
+  refresh,
+  toggleSelect,
+  selected,
+}) {
   const currentPath = usePathname();
 
   if (currentPath === "/devices") {
@@ -19,17 +29,39 @@ export default function DevicesList({ devices, refresh }) {
 
   if (currentPath === "/energy_distribution/list") {
     return (
-      <View style={styles.disrtibutionContainer}>
+      <Animated.View
+        style={styles.disrtibutionContainer}
+        entering={FadeIn.duration(600).springify()}
+        layout={LinearTransition.springify().mass(0.8)}
+      >
         {devices?.map((device) => {
           return (
-            <DeviceDistributionCard
-              data={device}
+            <Animated.View
               key={device.id}
-              refresh={refresh}
-            />
+              entering={FadeIn.delay(100)
+                .duration(600)
+                .withInitialValues({
+                  opacity: 0,
+                  transform: [{ scale: 0.8 }, { translateX: 50 }],
+                })
+                .springify()}
+              exiting={FadeOut.duration(500)
+                .withInitialValues({
+                  opacity: 1,
+                  transform: [{ scale: 1 }, { translateX: 0 }],
+                })
+                .springify()}
+              layout={LinearTransition.springify().mass(0.8)}
+            >
+              <DeviceDistributionCard
+                data={device}
+                toggleSelect={toggleSelect}
+                selected={selected}
+              />
+            </Animated.View>
           );
         })}
-      </View>
+      </Animated.View>
     );
   }
 }

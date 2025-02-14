@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import {
   Pressable,
   RefreshControl,
@@ -10,58 +9,24 @@ import {
 import MyContainer from "../../../components/UI/MyContainer";
 import { Icon } from "react-native-paper";
 import { FONTS, MyLightTheme } from "../../../assets/theme/global";
-import { useDispatch, useSelector } from "react-redux";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
-import { useEffect, useState } from "react";
-import { fetchDevices } from "../../../store/slices/devicesSlice";
 import ErrorScreen from "../../../components/UI/ErrorScreen";
 import SelectDevices from "../../../components/distribution/SelectDevices";
-import { setSelectedDevices } from "../../../store/slices/distributeDevicesSlice";
 import Header from "../../../components/UI/Header";
-import { showToast } from "../../../utils/showToast";
+import { useDistributeEnergy } from "../../../hooks/distribute/useDistributeEnergy";
 
-export default function EnergyDistibutionScreen() {
-  const dispatch = useDispatch();
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const { devices, isLoading, error } = useSelector((state) => state.devices);
-
-  const [selectedDevices, setSelectedDevicesLocal] = useState([]);
-
-  const deviceCount = devices?.length || 0;
-
-  const refresh = async () => {
-    try {
-      setRefreshing(true);
-      dispatch(fetchDevices());
-    } catch (_) {
-      showToast("error", "Упс... Сталася помилка при оновленні даних.");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    dispatch(fetchDevices());
-  }, [dispatch]);
-
-  const toggleSelectDevice = (deviceId) => {
-    setSelectedDevicesLocal((prev) =>
-      prev.find((dev) => dev.id === deviceId)
-        ? prev.filter((dev) => dev.id !== deviceId)
-        : [...prev, { ...devices.find((dev) => dev.id === deviceId) }]
-    );
-  };
-
-  const handleDistribute = async () => {
-    if (selectedDevices.length === 0) {
-      showToast("error", "Будь ласка, оберіть хоча б один пристрій.");
-      return;
-    }
-    await dispatch(setSelectedDevices(selectedDevices));
-    router.push("/energy_distribution/list");
-  };
+export default function EnergyDistributionScreen() {
+  const {
+    refreshing,
+    isLoading,
+    error,
+    devices,
+    deviceCount,
+    refresh,
+    toggleSelectDevice,
+    handleDistribute,
+    navigateToDevices,
+  } = useDistributeEnergy();
 
   if (isLoading) {
     return <LoadingScreen title={"Розподіл енергії"} />;
@@ -91,12 +56,7 @@ export default function EnergyDistibutionScreen() {
               Додайте спочатку перший пристрій, щоб активувати функцію розподілу
               енергії.
             </Text>
-            <Pressable
-              style={styles.link}
-              onPress={() => {
-                router.push("/devices");
-              }}
-            >
+            <Pressable style={styles.link} onPress={navigateToDevices}>
               <Text style={styles.buttonText}>
                 Перейти на сторінку Приладів{" "}
               </Text>

@@ -6,9 +6,15 @@ export class AuthError extends Error {
 }
 
 export const ensureAuthenticated = (getState) => {
-  const userId = getState().auth.user?.id;
-  if (!userId) {
+  const { user, isLoading } = getState();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user?.id) {
     throw new AuthError();
   }
-  return userId;
+
+  return user.id;
 };
