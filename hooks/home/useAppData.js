@@ -8,16 +8,16 @@ import useWeatherStore from "../../store/weatherStore";
 
 export const useAppData = () => {
   const router = useRouter();
-
   const [hadLoadingError, setHadLoadingError] = useState(false);
 
   const {
     user,
     isLoading: isUserLoading,
-    error,
+    error: authError,
     logoutUser,
     initializeAuth,
   } = useAuthStore();
+
   const {
     location,
     permission,
@@ -26,16 +26,21 @@ export const useAppData = () => {
     fetchLocation,
     setPermission,
   } = useLocationStore();
+
   const {
-    panels,
     isLoading: isPanelsLoading,
     error: panelsError,
     fetchPanels,
   } = usePanelsStore();
-  const { panelTypes, isTypesLoading, errorTypes, fetchPanelTypes } =
-    usePanelTypesStore();
+
   const {
-    weatherData,
+    panelTypes,
+    isLoading: isTypesLoading,
+    error: errorTypes,
+    fetchPanelTypes,
+  } = usePanelTypesStore();
+
+  const {
     isLoading: isWeatherLoading,
     error: weatherError,
     fetchWeather,
@@ -48,88 +53,141 @@ export const useAppData = () => {
     isTypesLoading ||
     isWeatherLoading;
 
-  const checkDataCompleteness = useCallback(() => {
-    return Boolean(location && panels && panelTypes && weatherData);
-  }, [location, panels, panelTypes, weatherData]);
-
-  const loadInitialData = useCallback(async () => {
-    try {
-      setHadLoadingError(false);
-
-      if (!user || !user.id) {
-        await initializeAuth();
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        if (!user) {
+          await initializeAuth();
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        setHadLoadingError(true);
       }
+    };
 
-      if (!permission) {
-        await setPermission();
-      }
-
-      if (!panelTypes) await fetchPanelTypes();
-      if (!panels) await fetchPanels();
-
-      if (!location) {
-        await fetchLocation();
-      }
-
-      if (location && !weatherData) await fetchWeather();
-    } catch (error) {
-      console.error("Error loading initial data:", error);
-      setHadLoadingError(true);
-    }
-  }, [
-    permission,
-    location,
-    panelTypes,
-    panels,
-    weatherData,
-    setPermission,
-    fetchLocation,
-    fetchPanelTypes,
-    fetchPanels,
-    fetchWeather,
-    user,
-    initializeAuth,
-  ]);
-
-  const reloadData = useCallback(async () => {
-    try {
-      await loadInitialData();
-    } catch (error) {
-      console.error("Error reloading app data:", error);
-    }
-  }, [loadInitialData]);
+    initialize();
+  }, [user, initializeAuth]);
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    const setupLocationServices = async () => {
+      try {
+        if (user) {
+          if (!permission) {
+            await setPermission();
+          }
+
+          await fetchLocation();
+        }
+      } catch (error) {
+        console.error("Location setup error:", error);
+        setHadLoadingError(true);
+      }
+    };
+
+    setupLocationServices();
+  }, [user, permission, setPermission, fetchLocation]);
 
   useEffect(() => {
-    if (!isLoading) {
-      checkDataCompleteness();
-    }
-  }, [isLoading, checkDataCompleteness]);
+    const loadPanelTypes = async () => {
+      try {
+        if (!panelTypes) {
+          await fetchPanelTypes();
+        }
+      } catch (error) {
+        console.error("Panel types fetch error:", error);
+        setHadLoadingError(true);
+      }
+    };
+
+    loadPanelTypes();
+  }, [panelTypes, fetchPanelTypes]);
 
   useEffect(() => {
-    if (user) {
-      fetchPanels();
-    }
+    const loadPanels = async () => {
+      try {
+        if (user) {
+          await fetchPanels();
+        }
+      } catch (error) {
+        console.error("Panels fetch error:", error);
+        setHadLoadingError(true);
+      }
+    };
+
+    loadPanels();
   }, [user, fetchPanels]);
 
   useEffect(() => {
-    if (error === "Помилка авторизації") {
+    const loadWeather = async () => {
+      try {
+        if (user && location) {
+          await fetchWeather();
+        }
+      } catch (error) {
+        console.error("Weather fetch error:", error);
+        setHadLoadingError(true);
+      }
+    };
+
+    loadWeather();
+  }, [user, location, fetchWeather]);
+
+  useEffect(() => {
+    if (authError === "Помилка авторизації") {
       (async () => {
         await logoutUser();
-        router.push("/auth");
+        router.replace("/auth");
       })();
     }
-  }, [error, router, logoutUser]);
+  }, [authError, router, logoutUser]);
+
+  const reloadData = useCallback(async () => {
+    try {
+      setHadLoadingError(false);
+
+      if (!user) {
+        await initializeAuth();
+      }
+
+      if (user) {
+        if (!permission) {
+          await setPermission();
+        }
+
+        await fetchLocation();
+        await fetchPanels();
+
+        if (location) {
+          await fetchWeather();
+        }
+      }
+
+      if (!panelTypes) {
+        await fetchPanelTypes();
+      }
+    } catch (error) {
+      console.error("Error reloading app data:", error);
+      setHadLoadingError(true);
+    }
+  }, [
+    user,
+    permission,
+    location,
+    panelTypes,
+    initializeAuth,
+    setPermission,
+    fetchLocation,
+    fetchPanels,
+    fetchWeather,
+    fetchPanelTypes,
+  ]);
 
   const errorMsg = useMemo(() => {
     if (isLoading) return null;
 
     if (hadLoadingError) {
       return (
-        error ||
+        authError ||
         locationError ||
         panelsError ||
         weatherError ||
@@ -141,7 +199,7 @@ export const useAppData = () => {
   }, [
     isLoading,
     hadLoadingError,
-    error,
+    authError,
     locationError,
     panelsError,
     weatherError,
@@ -149,10 +207,6 @@ export const useAppData = () => {
   ]);
 
   return {
-    location,
-    panels,
-    weatherData,
-    panelTypes,
     isLoading,
     error: errorMsg,
     reloadData,

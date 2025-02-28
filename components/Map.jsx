@@ -82,7 +82,7 @@ export default function Map({ forRegister }) {
     } else if (!currentCoords && !location) {
       setCurrentCoords(markerCoords);
     }
-  }, [currentCoords, clearError]);
+  }, []);
 
   const onRegionChangeComplete = (region) => {
     setCurrentCoords(region);

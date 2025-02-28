@@ -23,15 +23,9 @@ export const useRegisterLocation = () => {
       return;
     }
     try {
-      const locationResult = await addLocation();
-      if (!locationResult || locationResult?.error) {
-        showToast(
-          "error",
-          locationResult?.error || "Помилка реєстрації користувача"
-        );
-      }
+      await addLocation();
 
-      router.push("/profile");
+      router.replace("/profile");
     } catch (err) {
       showToast("error", err || "Упс...б щось пішло не так");
     }
@@ -39,8 +33,11 @@ export const useRegisterLocation = () => {
 
   const handleFetchLocation = async () => {
     try {
-      const result = await setRegisterLocationWithGeo();
-      setLocation(result);
+      await setRegisterLocationWithGeo();
+      setTimeout(() => {
+        setLocation(useLocationStore.getState().registerLocation);
+      }, 100);
+
       setShowAlert(true);
     } catch (err) {
       showToast("error", err || "Щось пішло не так");
@@ -67,7 +64,7 @@ export const useRegisterLocation = () => {
     if (registerLocation) {
       setLocation(registerLocation);
     }
-  }, [permission, registerLocation]);
+  }, [permission, registerLocation, setPermission]);
 
   return {
     location,

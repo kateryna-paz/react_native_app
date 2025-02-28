@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -23,21 +23,15 @@ import Header from "../../../components/UI/Header";
 import { AnimatedIcon } from "../../../components/home/AnimatedIcon";
 import CustomAlert from "../../../components/UI/CustomAlert";
 import { useHomeScreen } from "../../../hooks/home/useHomeScreen";
+import { TotalEnergyChart } from "../../../components/home/TotalEnergyChart";
 
 export default function HomeScreen() {
-  const {
-    location,
-    panels,
-    weatherData,
-    panelTypes,
-    isLoading,
-    error,
-    reloadData,
-  } = useAppData();
+  const { isLoading, error, reloadData } = useAppData();
 
   const { calculateHourlyEnergy } = useSolarEnergyCalculator();
 
   const {
+    location,
     show,
     refreshing,
     showAlert,
@@ -47,22 +41,41 @@ export default function HomeScreen() {
     handleCountEnergy,
     onRefresh,
     setShowAlert,
+    loading,
   } = useHomeScreen({
-    location,
-    panels,
-    weatherData,
-    panelTypes,
     calculateHourlyEnergy,
     reloadData,
   });
 
-  console.log("location", location);
-  console.log("panels", panels);
-  console.log("weatherData", weatherData);
-  console.log("panelTypes", panelTypes);
-  console.log("isLoading", isLoading);
+  const [showContent, setShowContent] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !loading) {
+      const timer = setTimeout(() => setShowContent(true), 100);
+      return () => clearTimeout(timer);
+    } else {
+      setShowContent(false);
+    }
+  }, [isLoading, loading]);
+
+  const getFormattedDate = () => {
+    const date = new Date();
+    const yyyy = date.getFullYear();
+    let mm = date.getMonth() + 1;
+    let dd = date.getDate();
+
+    if (dd < 10) dd = "0" + dd;
+    if (mm < 10) mm = "0" + mm;
+
+    return dd + "." + mm + "." + yyyy;
+  };
+
+  const dailyEnergyProduced = location?.dailyEnergyProduced.map((day) => ({
+    date: day.date,
+    energy: day.energy,
+  }));
+
+  if (isLoading || loading || refreshing || !showContent) {
     return <LoadingScreen title={"Головна"} />;
   }
 
@@ -110,7 +123,17 @@ export default function HomeScreen() {
                 <Animated.View
                   style={[
                     styles.totalEnergyContainer,
-                    { opacity: blockAnimations[0] },
+                    {
+                      opacity: blockAnimations[0],
+                      transform: [
+                        {
+                          translateY: blockAnimations[0].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [20, 0],
+                          }),
+                        },
+                      ],
+                    },
                   ]}
                 >
                   <Text
@@ -120,14 +143,26 @@ export default function HomeScreen() {
                       fontFamily: FONTS.SofiaSans,
                     }}
                   >
-                    Очікувана енергія
+                    Очікувана енергія на {getFormattedDate()}:
                   </Text>
                   <Text style={styles.text}>
-                    {totalEnergy && `${totalEnergy} кВт·год/день`}
+                    {totalEnergy && `${totalEnergy} кВт·год`}
                   </Text>
                 </Animated.View>
 
-                <Animated.View style={{ opacity: blockAnimations[0] }}>
+                <Animated.View
+                  style={{
+                    opacity: blockAnimations[0],
+                    transform: [
+                      {
+                        translateY: blockAnimations[0].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
                   <Pressable
                     onPress={() => router.push("/energy_distribution")}
                     style={styles.linkContainer}
@@ -152,14 +187,52 @@ export default function HomeScreen() {
                 </Animated.View>
 
                 <Animated.View
-                  style={{ opacity: blockAnimations[1], marginVertical: 10 }}
+                  style={{
+                    opacity: blockAnimations[1],
+                    transform: [
+                      {
+                        translateY: blockAnimations[1].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                    marginVertical: 10,
+                  }}
                 >
                   <EnergyChart weatherData={hourlyEnergy} />
                 </Animated.View>
                 <Animated.View
-                  style={{ opacity: blockAnimations[2], marginVertical: 10 }}
+                  style={{
+                    opacity: blockAnimations[2],
+                    transform: [
+                      {
+                        translateY: blockAnimations[2].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                    marginVertical: 10,
+                  }}
                 >
                   <CloudinessChart weatherData={hourlyEnergy} />
+                </Animated.View>
+                <Animated.View
+                  style={{
+                    opacity: blockAnimations[3],
+                    transform: [
+                      {
+                        translateY: blockAnimations[3].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                    marginVertical: 10,
+                  }}
+                >
+                  <TotalEnergyChart dailyEnergyProduced={dailyEnergyProduced} />
                 </Animated.View>
               </View>
             </ScrollView>

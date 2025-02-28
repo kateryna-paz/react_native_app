@@ -71,7 +71,7 @@ export default function DevicesScreen() {
             />
           }
         >
-          {devices?.length === 0 ? (
+          {devices.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.text}>
                 Додайте інформацію про перший пристрій, натиснувши на кнопку

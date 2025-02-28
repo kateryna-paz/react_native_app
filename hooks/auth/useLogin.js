@@ -30,7 +30,7 @@ export const useLogin = () => {
     try {
       await loginUser(data.email, data.password);
 
-      router.push("/profile");
+      router.replace("/profile");
     } catch (error) {
       if (error === "Пароль невірний") {
         setError("password", {

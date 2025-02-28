@@ -7,16 +7,18 @@ import { devicesApi } from "../services/apis/devices";
 
 const useDevicesStore = create(
   (set, _) => ({
-    devices: null,
+    devices: [],
     isLoading: false,
     error: null,
 
     fetchDevices: async () => {
+      set((state) => {
+        if (state.isLoading) return state;
+        return { isLoading: true, error: null };
+      });
+
       try {
-        set({ isLoading: true, error: null });
-
         const userId = ensureAuthenticated(useAuthStore.getState);
-
         const devices = await devicesApi.fetchUserDevices(userId);
         set({ devices, isLoading: false });
       } catch (error) {

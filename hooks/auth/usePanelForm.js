@@ -47,22 +47,22 @@ export const usePanelForm = () => {
         const isValid = await trigger();
 
         if (isValid) {
-          const panelResult = await addPanel({
+          await addPanel({
             ...data,
             power: Number(data.power),
             number: Number(data.number),
           });
 
-          if (!panelResult || panelResult?.error) {
-            showToast("error", panelResult?.error || "Виникла помилка");
-            return;
-          }
-
           showToast("success", "Нова панель успішно додана!");
+
           router.push("/auth/register/location");
+
+          setValue("typeId", null);
+          setValue("number", null);
+          setValue("power", null);
         }
       } catch (error) {
-        showToast("error", "Виникла помилка при валідації даних");
+        showToast("error", "Виникла помилка при створенні панелі");
       }
     } else {
       await trigger();

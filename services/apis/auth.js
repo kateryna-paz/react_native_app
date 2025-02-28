@@ -1,5 +1,5 @@
+import { asyncStorage } from "../asyncStorageService";
 import axiosInstance from "../axiosConfig";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const authApi = {
   register: async (userData) => {
@@ -21,8 +21,8 @@ const authApi = {
   },
 
   getUserData: async () => {
-    const user = await AsyncStorage.getItem("user");
-    const token = await AsyncStorage.getItem("token");
+    const user = await asyncStorage.getData("user");
+    const token = await asyncStorage.getData("token");
 
     if (token) {
       authApi.setAuthToken(token);
@@ -32,14 +32,14 @@ const authApi = {
   },
 
   saveUserData: async (user, token) => {
-    await AsyncStorage.multiSet([
-      ["user", JSON.stringify(user)],
-      ["token", token],
-    ]);
+    await asyncStorage.setData("user", JSON.stringify(user));
+    await asyncStorage.setData("token", token);
   },
 
   clearUserData: async () => {
-    await AsyncStorage.multiRemove(["token", "user"]);
+    await asyncStorage.removeData("distribute-devices-storage");
+    await asyncStorage.removeData("user");
+    await asyncStorage.removeData("token");
   },
 };
 

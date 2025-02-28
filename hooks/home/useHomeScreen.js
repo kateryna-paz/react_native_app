@@ -2,73 +2,42 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Animated } from "react-native";
 import { showToast } from "../../utils/showToast";
 import useDistributeDevicesStore from "../../store/distributeStore";
+import useLocationStore from "../../store/locationAndMapStore";
+import usePanelsStore from "../../store/panelsStore";
+import usePanelTypesStore from "../../store/panelTypesStore";
+import useWeatherStore from "../../store/weatherStore";
 
-export const useHomeScreen = ({
-  location,
-  panels,
-  weatherData,
-  panelTypes,
-  calculateHourlyEnergy,
-  reloadData,
-}) => {
+export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
+  // UI state
   const [show, setShow] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Data state
   const [hourlyEnergy, setHourlyEnergy] = useState(null);
   const [totalEnergy, setTotalEnergy] = useState(null);
 
+  // External store functions
   const { setTotalDistributeEnergy } = useDistributeDevicesStore();
+  const { location, updateDailyEnergyArray } = useLocationStore();
 
-  const efficiency = useMemo(() => {
-    if (!panels?.length || !panelTypes?.length) return null;
+  const { panels } = usePanelsStore();
+  const { panelTypes } = usePanelTypesStore();
+  const { weatherData } = useWeatherStore();
 
-    const effMono =
-      panelTypes.find((pT) => pT.type === "Монокристалічні").efficiency / 100;
-    const effPoli =
-      panelTypes.find((pT) => pT.type === "Полікристалічні").efficiency / 100;
-    const effAmo =
-      panelTypes.find((pT) => pT.type === "Аморфні").efficiency / 100;
-
-    return {
-      monocristal: effMono,
-      policristal: effPoli,
-      amorfni: effAmo,
-    };
-  }, [panels, panelTypes]);
-
-  const panelsPower = useMemo(() => {
-    if (!panels?.length || !efficiency) return null;
-
-    return panels.reduce(
-      (acc, panel) => {
-        const totalPower = (+panel.number * +panel.power) / 1000;
-        if (panel.type === "Монокристалічні") {
-          acc.monocristal += totalPower * efficiency.monocristal;
-        } else if (panel.type === "Полікристалічні") {
-          acc.policristal += totalPower * efficiency.policristal;
-        } else if (panel.type === "Аморфні") {
-          acc.amorfni += totalPower * efficiency.amorfni;
-        }
-        return acc;
-      },
-      { monocristal: 0, policristal: 0, amorfni: 0 }
-    );
-  }, [panels, efficiency]);
-
-  const insolation = useMemo(
-    () => location?.monthlyInsolation?.[new Date().getMonth()] || 0,
-    [location]
-  );
-
+  // Animation setup
   const blockAnimations = useMemo(
-    () => Array.from({ length: 3 }, () => new Animated.Value(0)),
+    () => Array.from({ length: 4 }, () => new Animated.Value(0)),
     []
   );
 
+  // Start animations
   const startBlockAnimations = useCallback(() => {
     blockAnimations.forEach((animation) => animation.setValue(0));
+
     Animated.stagger(
-      600,
+      800,
       blockAnimations.map((animation) =>
         Animated.timing(animation, {
           toValue: 1,
@@ -79,90 +48,189 @@ export const useHomeScreen = ({
     ).start();
   }, [blockAnimations]);
 
+  // Validate required data
   const checkData = useCallback(() => {
-    if (!location)
-      return showToast("error", "Помилка: Дані про локацію відсутні"), false;
-    if (!panels.length || !panelTypes.length)
-      return (
-        showToast("error", "Помилка: Немає даних про сонячні панелі"), false
-      );
     if (
+      !location ||
+      !panels?.length ||
+      !panelTypes?.length ||
       !weatherData?.hourlyClouds ||
       !weatherData?.sunrise ||
       !weatherData?.sunset
     ) {
-      return showToast("error", "Помилка: Немає погодних даних"), false;
+      return false;
     }
+
     return true;
   }, [location, weatherData, panels, panelTypes]);
 
-  const handleCountEnergy = useCallback(() => {
-    if (!checkData()) {
-      setShowAlert(true);
-      return;
+  const hasTodayEnergyData = useCallback(() => {
+    if (
+      !location?.dailyEnergyProduced ||
+      location.dailyEnergyProduced.length === 0
+    ) {
+      return false;
     }
-    setShow(true);
 
-    const { hourlyEnergy, allEnergy } = calculateHourlyEnergy(
-      weatherData.hourlyClouds,
-      weatherData.sunrise,
-      weatherData.sunset,
-      insolation,
-      panelsPower
+    const today = new Date().toISOString().split("T")[0];
+    const todayEntry = location.dailyEnergyProduced.find((entry) =>
+      entry.date?.startsWith(today)
     );
 
-    setTotalDistributeEnergy(allEnergy);
-    setHourlyEnergy(hourlyEnergy);
-    setTotalEnergy(allEnergy);
+    if (!todayEntry) {
+      return false;
+    }
+
+    setTotalEnergy(todayEntry.energy);
+    setHourlyEnergy(todayEntry.hourlyEnergy);
+
+    return true;
+  }, [location]);
+
+  // Calculate energy data
+  const calculateEnergyData = useCallback(async () => {
+    if (!checkData()) {
+      return false;
+    }
+
+    try {
+      const { hourlyEnergy: newHourlyEnergy, allEnergy } =
+        calculateHourlyEnergy(
+          weatherData.hourlyClouds,
+          weatherData.sunrise,
+          weatherData.sunset
+        );
+
+      console.log("newHourlyEnergy", newHourlyEnergy, allEnergy);
+
+      if (!newHourlyEnergy && !allEnergy) {
+        showToast("error", "Помилка розрахунку енергії");
+        return false;
+      }
+
+      const isEnergyChanged =
+        totalEnergy !== allEnergy ||
+        JSON.stringify(hourlyEnergy) !== JSON.stringify(newHourlyEnergy);
+
+      setTotalDistributeEnergy(allEnergy);
+      setHourlyEnergy(newHourlyEnergy);
+      setTotalEnergy(allEnergy);
+
+      const today = new Date().toISOString().split("T")[0];
+      const todayEntry = location?.dailyEnergyProduced?.find((entry) =>
+        entry.date?.startsWith(today)
+      );
+
+      if (!todayEntry || isEnergyChanged) {
+        await updateDailyEnergyArray(
+          allEnergy,
+          newHourlyEnergy,
+          isEnergyChanged
+        );
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
   }, [
-    checkData,
-    insolation,
-    panelsPower,
-    weatherData,
-    calculateHourlyEnergy,
     setTotalDistributeEnergy,
-    setHourlyEnergy,
-    setTotalEnergy,
+    calculateHourlyEnergy,
+    weatherData,
+    checkData,
+    updateDailyEnergyArray,
   ]);
 
-  const onRefresh = async () => {
+  const handleCountEnergy = useCallback(() => {
+    setLoading(true);
+
+    setShow(false);
+
+    if (hourlyEnergy && totalEnergy) {
+      setShow(true);
+      startBlockAnimations();
+      setLoading(false);
+      return;
+    }
+
+    if (hasTodayEnergyData()) {
+      setShow(true);
+      startBlockAnimations();
+      setLoading(false);
+      return;
+    }
+
+    if (!checkData()) {
+      showToast("error", "Перевірте дані про локацію та панелі");
+      setLoading(false);
+      return;
+    }
+
+    if (calculateEnergyData()) {
+      setShow(true);
+      startBlockAnimations();
+    }
+
+    setLoading(false);
+  }, [
+    hourlyEnergy,
+    totalEnergy,
+    hasTodayEnergyData,
+    checkData,
+    calculateEnergyData,
+    startBlockAnimations,
+  ]);
+
+  const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
-      setTotalEnergy(null);
       setShow(false);
 
-      await reloadData();
-
       blockAnimations.forEach((anim) => anim.setValue(0));
+      setTotalEnergy(null);
+      setHourlyEnergy(null);
+
+      await reloadData();
     } catch (error) {
+      console.error("Refresh error:", error);
       showToast("error", "Не вдалося оновити дані.");
     } finally {
       setRefreshing(false);
+      setLoading(false);
     }
-  };
+  }, [reloadData, blockAnimations]);
 
   useEffect(() => {
-    if (show) {
-      handleCountEnergy();
-      startBlockAnimations();
-    }
-  }, [show, handleCountEnergy, startBlockAnimations]);
+    setLoading(true);
 
-  useEffect(() => {
-    if (totalEnergy && show) {
-      startBlockAnimations();
-    }
-  }, [totalEnergy, startBlockAnimations, show]);
-
-  useEffect(() => {
-    if (!panels.length || !weatherData || !location) {
+    if (!hasTodayEnergyData() && !checkData()) {
       setShow(false);
       setTotalEnergy(null);
       setHourlyEnergy(null);
     }
-  }, [panels, weatherData, location]);
+
+    setLoading(false);
+  }, [checkData, hasTodayEnergyData]);
+
+  useEffect(() => {
+    if (panels && panels.length > 0 && location && weatherData) {
+      setShow(false);
+      setTotalEnergy(null);
+      setHourlyEnergy(null);
+
+      calculateEnergyData();
+    }
+  }, [panels, location, weatherData, calculateEnergyData]);
+
+  // Handle stored data display
+  useEffect(() => {
+    if (hasTodayEnergyData()) {
+      setShow(true);
+      startBlockAnimations();
+    }
+  }, [hasTodayEnergyData, startBlockAnimations]);
 
   return {
+    location,
     show,
     refreshing,
     showAlert,
@@ -172,5 +240,6 @@ export const useHomeScreen = ({
     handleCountEnergy,
     onRefresh,
     setShowAlert,
+    loading,
   };
 };

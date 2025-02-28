@@ -43,7 +43,7 @@ export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
       await changePanel({ id, ...panelData });
       showToast("success", "Дані успішно оновлені");
       setReductOpen(false);
-      refresh();
+      await refresh();
     } catch (error) {
       showToast("error", "Помилка при оновленні даних");
     }
@@ -54,7 +54,7 @@ export const usePanelCard = ({ id, power, number, typeId, refresh }) => {
       await deletePanel(id);
       showToast("success", "Панель успішно видалена");
       setDeleteOpen(false);
-      refresh();
+      await refresh();
     } catch (e) {
       showToast("error", "Помилка при видалення панелі");
     }

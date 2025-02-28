@@ -1,5 +1,5 @@
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { asyncStorage } from "./asyncStorageService";
 
 const listeners = new Set();
 
@@ -18,14 +18,15 @@ const axiosInstance = axios.create({
 });
 
 const getAuthToken = async () => {
-  const token = await AsyncStorage.getItem("token");
+  const token = await asyncStorage.getData("token");
   return token ? `Bearer ${token}` : null;
 };
 
 const handleLogout = async () => {
   try {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("refreshToken");
+    await asyncStorage.removeData("token");
+    await asyncStorage.removeData("refreshToken");
+    await asyncStorage.removeData("distribute-devices-storage");
     authEvents.emit("unauthorized");
   } catch (error) {
     console.error("Error during logout:", error);

@@ -71,7 +71,9 @@ export const useLocationSection = () => {
         location?.latitude !== localLocation?.latitude ||
         location?.longitude !== localLocation?.longitude
       ) {
-        setLocalLocation(location);
+        setTimeout(() => {
+          setLocalLocation(useLocationStore.getState().location);
+        }, 100);
       }
 
       showToast("success", "Локацію успішно змінено!");

@@ -57,8 +57,10 @@ export const useDevices = () => {
   };
 
   useEffect(() => {
-    fetchDevices();
-  }, [fetchDevices]);
+    if (devices.length === 0 && !isLoading) {
+      fetchDevices();
+    }
+  }, []);
 
   return {
     devices,

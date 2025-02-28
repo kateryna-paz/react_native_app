@@ -157,6 +157,14 @@ const useDistributeDevicesStore = create((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+  clearState: () =>
+    set({
+      selectedDevices: [],
+      unselectedDevices: [],
+      totalDistributeEnergy: 0,
+      isLoading: false,
+      error: null,
+    }),
 }));
 
 useDistributeDevicesStore.getState().initializeStore();

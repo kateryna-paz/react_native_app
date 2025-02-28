@@ -35,10 +35,10 @@ export const useDistributeEnergy = () => {
   };
 
   useEffect(() => {
-    if (isLoggedIn && !isLoading && !devices?.length && !error) {
+    if (isLoggedIn && !isLoading && !error) {
       fetchDevices();
     }
-  }, [devices?.length, isLoading, isLoggedIn, fetchDevices, error]);
+  }, []);
 
   useEffect(() => {
     useDistributeDevicesStore.getState().initializeStore();

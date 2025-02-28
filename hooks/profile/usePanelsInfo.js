@@ -29,7 +29,7 @@ export const usePanelsInfo = ({ user }) => {
   };
 
   const refresh = async () => {
-    fetchPanels();
+    await fetchPanels();
   };
 
   const handleAddPanel = async () => {
@@ -38,12 +38,12 @@ export const usePanelsInfo = ({ user }) => {
         setShowAlert(true);
         return;
       }
+      setOpenAddDialog(false);
 
       await addPanel(panelData);
       showToast("success", "Нова панель успішно додана!");
 
       setPanelData({ power: null, number: null, typeId: null });
-      setOpenAddDialog(false);
       await refresh();
     } catch (e) {
       showToast("error", `${e}`);
@@ -52,10 +52,10 @@ export const usePanelsInfo = ({ user }) => {
 
   useEffect(() => {
     if (user?.id || error) {
-      fetchPanels();
       fetchPanelTypes();
+      fetchPanels();
     }
-  }, [user?.id]);
+  }, [user?.id, error, fetchPanelTypes, fetchPanels]);
 
   const closeAddDialog = () => setOpenAddDialog(false);
   const openAddPanelDialog = () => setOpenAddDialog(true);

@@ -5,6 +5,7 @@ import { ensureAuthenticated } from "./utils/authUtils";
 import { getErrorMessage } from "./utils/errorHandler";
 import { panelsApi } from "../services/apis/panels";
 import { asyncStorage } from "../services/asyncStorageService";
+import useLocationStore from "./locationAndMapStore";
 
 const usePanelsStore = create(
   persist(
@@ -29,19 +30,16 @@ const usePanelsStore = create(
       changePanel: async ({ id, typeId, number, power }) => {
         set({ isLoading: true, error: null });
 
+        const { updateDailyEnergyArray } = useLocationStore.getState();
+
         try {
-          const updatedPanel = await panelsApi.changePanel(
-            id,
-            typeId,
-            number,
-            power
-          );
-          set((state) => ({
-            panels: state.panels.map((panel) =>
-              panel.id === id ? { ...panel, ...updatedPanel } : panel
-            ),
+          await panelsApi.changePanel(id, typeId, number, power);
+          set(() => ({
+            panels: null,
             isLoading: false,
           }));
+
+          updateDailyEnergyArray();
         } catch (error) {
           set({ error: getErrorMessage(error), isLoading: false });
         }
@@ -50,20 +48,19 @@ const usePanelsStore = create(
       addPanel: async ({ typeId, number, power }) => {
         set({ isLoading: true, error: null });
 
+        const { updateDailyEnergyArray } = useLocationStore.getState();
+
         try {
           const userId = ensureAuthenticated(useAuthStore.getState);
-          const newPanel = await panelsApi.addPanel(
-            userId,
-            typeId,
-            number,
-            power
-          );
+          await panelsApi.addPanel(userId, typeId, number, power);
 
-          set((state) => ({
-            panels: [...state.panels, newPanel],
+          set(() => ({
+            panels: null,
             registerPanel: { power: 0, number: 0, typeId: null },
             isLoading: false,
           }));
+
+          updateDailyEnergyArray();
         } catch (error) {
           set({ error: getErrorMessage(error), isLoading: false });
         }
@@ -72,12 +69,16 @@ const usePanelsStore = create(
       deletePanel: async (id) => {
         set({ isLoading: true, error: null });
 
+        const { updateDailyEnergyArray } = useLocationStore.getState();
+
         try {
           await panelsApi.deletePanel(id);
-          set((state) => ({
-            panels: state.panels.filter((panel) => panel.id !== id),
+          set(() => ({
+            panels: null,
             isLoading: false,
           }));
+
+          updateDailyEnergyArray();
         } catch (error) {
           set({ error: getErrorMessage(error), isLoading: false });
         }

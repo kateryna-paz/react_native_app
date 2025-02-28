@@ -16,11 +16,15 @@ export const locationsApi = {
     return response.data;
   },
 
-  updateLocation: async (id, { userId, coordinates, regionName }) => {
+  updateLocation: async (
+    id,
+    { userId, coordinates, regionName, dailyEnergyProduced }
+  ) => {
     const response = await axiosInstance.put(`/locations/${id}`, {
       userId,
       coordinates,
       regionName,
+      dailyEnergyProduced,
     });
     return response.data;
   },

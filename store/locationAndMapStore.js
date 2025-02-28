@@ -9,6 +9,7 @@ import { ensureAuthenticated } from "./utils/authUtils";
 import { locationsApi } from "../services/apis/locations";
 import { getErrorMessage } from "./utils/errorHandler";
 import useAuthStore from "./authStore";
+import useWeatherStore from "./weatherStore";
 
 const useLocationStore = create(
   (set, get) => ({
@@ -34,6 +35,7 @@ const useLocationStore = create(
           longitudeDelta: 20,
         },
         error: null,
+        isLoading: false,
       }),
 
     clearError: () => set({ error: null }),
@@ -41,6 +43,8 @@ const useLocationStore = create(
     getLocationWithGeo: async () => {
       try {
         set({ isLoading: true, error: null });
+
+        const { clearWeatherData } = useWeatherStore.getState();
 
         await requestLocationPermission();
         const { latitude, longitude } = await getCurrentPosition();
@@ -51,11 +55,20 @@ const useLocationStore = create(
         let location;
 
         if (existingLocation?.id) {
+          const today = new Date().toISOString().split("T")[0];
+          const updatedDailyEnergy =
+            existingLocation.dailyEnergyProduced?.filter(
+              (entry) => !entry.date.startsWith(today)
+            ) || [];
+
           location = await locationsApi.updateLocation(existingLocation.id, {
             userId,
             coordinates: [latitude, longitude],
             regionName: regionInUkrainian,
+            dailyEnergyProduced: updatedDailyEnergy,
           });
+
+          clearWeatherData();
         } else {
           location = await locationsApi.createLocation({
             userId,
@@ -93,6 +106,8 @@ const useLocationStore = create(
       try {
         set({ isLoading: true, error: null });
 
+        const { clearWeatherData } = useWeatherStore.getState();
+
         if (!regionName) {
           throw new Error(
             "Не вдалося визначити область для заданих координат."
@@ -110,11 +125,20 @@ const useLocationStore = create(
             regionName,
           });
         } else {
+          const today = new Date().toISOString().split("T")[0];
+          const updatedDailyEnergy =
+            existingLocation.dailyEnergyProduced?.filter(
+              (entry) => !entry.date.startsWith(today)
+            ) || [];
+
           location = await locationsApi.updateLocation(existingLocation.id, {
             userId,
             coordinates: [latitude, longitude],
             regionName,
+            dailyEnergyProduced: updatedDailyEnergy,
           });
+
+          clearWeatherData();
         }
 
         set({
@@ -216,6 +240,80 @@ const useLocationStore = create(
     setRegisterLocationWithMap: ({ latitude, longitude, regionName }) => {
       try {
         set({ registerLocation: { latitude, longitude, regionName } });
+      } catch (error) {
+        set({ error: getErrorMessage(error) });
+      }
+    },
+
+    updateDailyEnergyArray: async (
+      energyAmount,
+      hourlyEnergyArray,
+      isEnergyChanged
+    ) => {
+      const { location } = get();
+      const userId = ensureAuthenticated(useAuthStore.getState);
+
+      if (!location) {
+        set({ error: "Локацію не знайдено." });
+        return;
+      }
+
+      try {
+        const existingEntries = location.dailyEnergyProduced;
+
+        set({ error: null });
+
+        let updatedArray = existingEntries;
+        const today = new Date().toISOString().split("T")[0];
+
+        if (!energyAmount && !hourlyEnergyArray) {
+          updatedArray =
+            existingEntries?.filter((entry) => !entry.date.startsWith(today)) ||
+            [];
+        } else {
+          const todayEntryIndex = existingEntries.findIndex((entry) =>
+            entry.date.startsWith(today)
+          );
+
+          const newEntry = {
+            date: new Date().toISOString(),
+            energy: energyAmount,
+            hourlyEnergy: hourlyEnergyArray,
+          };
+
+          if (todayEntryIndex !== -1) {
+            const existingEntry = existingEntries[todayEntryIndex];
+
+            const shouldUpdate =
+              isEnergyChanged ||
+              existingEntry.energy !== energyAmount ||
+              JSON.stringify(existingEntry.hourlyEnergy) !==
+                JSON.stringify(hourlyEnergyArray);
+
+            if (shouldUpdate) {
+              updatedArray[todayEntryIndex] = newEntry;
+            } else {
+              return;
+            }
+          } else {
+            updatedArray.push(newEntry);
+          }
+        }
+
+        if (JSON.stringify(existingEntries) === JSON.stringify(updatedArray)) {
+          return;
+        }
+
+        const updatedLocation = await locationsApi.updateLocation(location.id, {
+          userId: userId,
+          coordinates: [location.latitude, location.longitude],
+          regionName: location.regionName,
+          dailyEnergyProduced: updatedArray,
+        });
+
+        set({
+          location: locationsApi.transformLocationData(updatedLocation),
+        });
       } catch (error) {
         set({ error: getErrorMessage(error) });
       }
