@@ -107,7 +107,7 @@ export default function ReductDeviceCard({ deviceData, setDeviceData }) {
 
       <View style={{ marginTop: 8, width: "100%" }}>
         <SelectList
-          title="Оберіть важливість приладу"
+          title="Оберіть пріоритетність приладу"
           items={importances}
           selectedTypeId={deviceData.importanceId || null}
           onSelect={handleImportanceChange}

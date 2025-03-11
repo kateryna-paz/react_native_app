@@ -28,7 +28,7 @@ export default function DeleteDeviceDialog({
           </Text>
 
           <Text style={styles.deviceInfo}>
-            Важливість при розподіленні:{" "}
+            Пріоритетність при розподіленні:{" "}
             <Text style={styles.boldText}>{type?.type || "Невідомо"}</Text>
           </Text>
 

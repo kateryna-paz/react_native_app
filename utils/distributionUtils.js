@@ -43,7 +43,7 @@ export const calculateDistribution = (
     );
   });
 
-  // Групуємо інші пристрої за важливістю
+  // Групуємо інші пристрої за пріоритетністю
   const groupedDevices = {
     high: dynamicDevices.filter((dev) => dev.importance === "висока"),
     medium: dynamicDevices.filter((dev) => dev.importance === "середня"),

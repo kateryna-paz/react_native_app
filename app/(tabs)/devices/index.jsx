@@ -98,7 +98,7 @@ export default function DevicesScreen() {
         showAlert={showAlert}
         onConfirm={() => setShowAlert(false)}
         showCancelButton={false}
-        message="Будь ласка, введіть ім'я та потужність приладу, також оберіть його рівень важливість при розподілені енергії."
+        message="Будь ласка, введіть ім'я та потужність приладу, також оберіть його пріоритет при розподілені енергії."
       />
 
       <DialogCreation

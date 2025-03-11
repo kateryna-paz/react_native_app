@@ -24,6 +24,7 @@ import { AnimatedIcon } from "../../../components/home/AnimatedIcon";
 import CustomAlert from "../../../components/UI/CustomAlert";
 import { useHomeScreen } from "../../../hooks/home/useHomeScreen";
 import { TotalEnergyChart } from "../../../components/home/TotalEnergyChart";
+import StatisticsSection from "../../../components/home/StatisticsSection";
 
 export default function HomeScreen() {
   const { isLoading, error, reloadData } = useAppData();
@@ -234,6 +235,22 @@ export default function HomeScreen() {
                 >
                   <TotalEnergyChart dailyEnergyProduced={dailyEnergyProduced} />
                 </Animated.View>
+                <Animated.View
+                  style={{
+                    opacity: blockAnimations[3],
+                    transform: [
+                      {
+                        translateY: blockAnimations[3].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                    marginVertical: 10,
+                  }}
+                >
+                  <StatisticsSection energyData={dailyEnergyProduced} />
+                </Animated.View>
               </View>
             </ScrollView>
           )}
@@ -264,7 +281,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
-    marginHorizontal: 10,
+
     marginVertical: 10,
     paddingTop: 2,
     flex: 1,
@@ -277,20 +294,20 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "space-around",
     alignItems: "center",
-    marginHorizontal: 10,
   },
   totalEnergyContainer: {
     borderRadius: 16,
+    marginHorizontal: 10,
     paddingHorizontal: 25,
     paddingVertical: 15,
     borderWidth: 3,
     borderColor: MyLightTheme.colors.primaryDark,
-    width: "100%",
+    width: "94%",
   },
   linkContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
+    width: "94%",
     margin: 10,
     paddingHorizontal: 4,
   },

@@ -263,7 +263,7 @@ const useLocationStore = create(
 
         set({ error: null });
 
-        let updatedArray = existingEntries;
+        let updatedArray = Array.from(existingEntries);
         const today = new Date().toISOString().split("T")[0];
 
         if (!energyAmount && !hourlyEnergyArray) {

@@ -8,17 +8,14 @@ import usePanelTypesStore from "../../store/panelTypesStore";
 import useWeatherStore from "../../store/weatherStore";
 
 export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
-  // UI state
   const [show, setShow] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Data state
   const [hourlyEnergy, setHourlyEnergy] = useState(null);
   const [totalEnergy, setTotalEnergy] = useState(null);
 
-  // External store functions
   const { setTotalDistributeEnergy } = useDistributeDevicesStore();
   const { location, updateDailyEnergyArray } = useLocationStore();
 
@@ -26,13 +23,11 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
   const { panelTypes } = usePanelTypesStore();
   const { weatherData } = useWeatherStore();
 
-  // Animation setup
   const blockAnimations = useMemo(
     () => Array.from({ length: 4 }, () => new Animated.Value(0)),
     []
   );
 
-  // Start animations
   const startBlockAnimations = useCallback(() => {
     blockAnimations.forEach((animation) => animation.setValue(0));
 
@@ -48,7 +43,6 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
     ).start();
   }, [blockAnimations]);
 
-  // Validate required data
   const checkData = useCallback(() => {
     if (
       !location ||
@@ -87,7 +81,6 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
     return true;
   }, [location]);
 
-  // Calculate energy data
   const calculateEnergyData = useCallback(async () => {
     if (!checkData()) {
       return false;
@@ -101,12 +94,15 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
           weatherData.sunset
         );
 
-      console.log("newHourlyEnergy", newHourlyEnergy, allEnergy);
-
       if (!newHourlyEnergy && !allEnergy) {
         showToast("error", "Помилка розрахунку енергії");
         return false;
       }
+
+      const today = new Date().toISOString().split("T")[0];
+      const todayEntry = location?.dailyEnergyProduced?.find((entry) =>
+        entry.date?.startsWith(today)
+      );
 
       const isEnergyChanged =
         totalEnergy !== allEnergy ||
@@ -115,11 +111,6 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
       setTotalDistributeEnergy(allEnergy);
       setHourlyEnergy(newHourlyEnergy);
       setTotalEnergy(allEnergy);
-
-      const today = new Date().toISOString().split("T")[0];
-      const todayEntry = location?.dailyEnergyProduced?.find((entry) =>
-        entry.date?.startsWith(today)
-      );
 
       if (!todayEntry || isEnergyChanged) {
         await updateDailyEnergyArray(
@@ -217,11 +208,10 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
       setTotalEnergy(null);
       setHourlyEnergy(null);
 
-      calculateEnergyData();
+      if (!hasTodayEnergyData()) calculateEnergyData();
     }
-  }, [panels, location, weatherData, calculateEnergyData]);
+  }, [panels, location, weatherData, hasTodayEnergyData, calculateEnergyData]);
 
-  // Handle stored data display
   useEffect(() => {
     if (hasTodayEnergyData()) {
       setShow(true);
