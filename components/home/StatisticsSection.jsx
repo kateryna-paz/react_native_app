@@ -43,7 +43,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     padding: 10,
-    backgroundColor: MyLightTheme.colors.background,
+    backgroundColor: MyLightTheme.colors.white,
+    borderRadius: 30,
   },
   card: {
     alignItems: "center",

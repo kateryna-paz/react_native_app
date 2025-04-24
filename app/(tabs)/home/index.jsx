@@ -147,7 +147,7 @@ export default function HomeScreen() {
                     Очікувана енергія на {getFormattedDate()}:
                   </Text>
                   <Text style={styles.text}>
-                    {totalEnergy && `${totalEnergy} кВт·год`}
+                    {totalEnergy && `${totalEnergy} кВт`}
                   </Text>
                 </Animated.View>
 
@@ -198,7 +198,6 @@ export default function HomeScreen() {
                         }),
                       },
                     ],
-                    marginVertical: 10,
                   }}
                 >
                   <EnergyChart weatherData={hourlyEnergy} />
@@ -214,7 +213,6 @@ export default function HomeScreen() {
                         }),
                       },
                     ],
-                    marginVertical: 10,
                   }}
                 >
                   <CloudinessChart weatherData={hourlyEnergy} />

@@ -1,4 +1,4 @@
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import MyContainer from "../../../components/UI/MyContainer";
 import { MyLightTheme } from "../../../assets/theme/global";
 import LoadingScreen from "../../../components/UI/LoadingScreen";
@@ -8,6 +8,8 @@ import BackButton from "../../../components/UI/BackButton";
 import Header from "../../../components/UI/Header";
 import AnimatedText from "../../../components/distribution/AnimatedText";
 import { useListDistribute } from "../../../hooks/distribute/useListDistribute";
+import { useRef } from "react";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function DistributionScreen() {
   const {
@@ -19,6 +21,8 @@ export default function DistributionScreen() {
     refresh,
     handleToggleSelectDevice,
   } = useListDistribute();
+
+  const scrollRef = useRef(null);
 
   if (error) {
     return (
@@ -52,10 +56,14 @@ export default function DistributionScreen() {
         }}
         iconColor={MyLightTheme.colors.primary}
       />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+      <KeyboardAwareScrollView
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true} // Запобігає появі зайвого місця
+        extraScrollHeight={-60}
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -93,7 +101,7 @@ export default function DistributionScreen() {
             <AnimatedText style={styles.smallText} text={"Таких немає"} />
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </MyContainer>
   );
 }

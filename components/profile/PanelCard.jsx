@@ -32,9 +32,7 @@ export default function PanelCard({
   } = usePanelCard({ id, power, number, typeId, refresh });
 
   return (
-    <View
-      style={[styles.container, { borderColor: MyLightTheme.colors.primary }]}
-    >
+    <View style={styles.container}>
       {reductOpen && (
         <DialogCreation
           visible={reductOpen}
@@ -110,6 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     borderRadius: 10,
     paddingVertical: 4,
+    borderColor: MyLightTheme.colors.primary,
     shadowColor: MyLightTheme.colors.black,
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 0.4,

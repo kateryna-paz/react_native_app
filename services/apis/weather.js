@@ -66,6 +66,7 @@ export const formatWeatherData = (weatherData) => {
     cloudiness: forecastHours[0].cloud,
     sunDayHours: `${daylight.hours}.${daylight.minutes}`,
     hourlyClouds: forecastHours.map((hour) => hour.cloud),
+    hourlyTemp: forecastHours.map((hour) => hour.temp_c),
     sunrise: sunrise.split(" ")[0],
     sunset: sunsetFormatted,
   };

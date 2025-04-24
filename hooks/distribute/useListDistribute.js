@@ -57,7 +57,6 @@ export function useListDistribute() {
       updateDistribution();
     } catch (err) {
       showToast("error", "Упс... Сталася помилка при оновленні даних.");
-      console.log(err);
     } finally {
       setRefreshing(false);
     }

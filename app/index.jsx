@@ -8,11 +8,7 @@ export default function App() {
   const [path, setPath] = useState("");
 
   useEffect(() => {
-    if (isLoggedIn) {
-      setPath("/home");
-    } else {
-      setPath("/auth");
-    }
+    setPath(isLoggedIn ? "/home" : "/auth");
   }, [isLoggedIn]);
 
   return <Redirect href={path}></Redirect>;

@@ -2,6 +2,11 @@ import { useCallback, useMemo, useState } from "react";
 import useLocationStore from "../../store/locationAndMapStore";
 import usePanelsStore from "../../store/panelsStore";
 import usePanelTypesStore from "../../store/panelTypesStore";
+import {
+  TEMP_COEF,
+  TEMP_STANDART,
+  CLOUD_COEF,
+} from "../../constants/tempConsts";
 
 const formatTime = (hour, endMinute) => {
   const totalMinutes = hour * 60 + endMinute;
@@ -60,7 +65,7 @@ export default function useSolarEnergyCalculator() {
   );
 
   const calculateHourlyEnergy = useCallback(
-    (hourlyClouds, sunrise, sunset) => {
+    (hourlyClouds, hourlyTemp, sunrise, sunset) => {
       const hourlyEnergy = [];
       const [sunriseHour, sunriseMinute] = sunrise.split(":").map(Number);
       const [sunsetHour, sunsetMinute] = sunset.split(":").map(Number);
@@ -71,24 +76,19 @@ export default function useSolarEnergyCalculator() {
         let startMinute = hour === sunriseHour ? sunriseMinute : 0;
         let endMinute = hour === sunsetHour ? sunsetMinute : 60;
 
-        const cloudiness = hourlyClouds[hour - sunriseHour] || 0;
-        const cloudImpact = 1 - 0.8 * (cloudiness / 100);
+        const cloudiness = hourlyClouds[hour];
+        const cloudImpact = 1 - CLOUD_COEF * (cloudiness / 100);
+        const tempImpact =
+          1 - (TEMP_COEF * (hourlyTemp[hour] - TEMP_STANDART)) / 100;
 
-        const energyMono =
-          panelsPower.monocristal *
+        const periodResult =
           insolation *
           cloudImpact *
+          tempImpact *
           ((endMinute - startMinute) / 60);
-        const energyPoly =
-          panelsPower.policristal *
-          insolation *
-          cloudImpact *
-          ((endMinute - startMinute) / 60);
-        const energyAmorph =
-          panelsPower.amorfni *
-          insolation *
-          cloudImpact *
-          ((endMinute - startMinute) / 60);
+        const energyMono = panelsPower.monocristal * periodResult;
+        const energyPoly = panelsPower.policristal * periodResult;
+        const energyAmorph = panelsPower.amorfni * periodResult;
 
         const totalEnergy = energyMono + energyPoly + energyAmorph;
 
@@ -99,14 +99,16 @@ export default function useSolarEnergyCalculator() {
             .toString()
             .padStart(2, "0")}-${formatTime(hour, endMinute)}`,
           cloudiness,
+          temp: hourlyTemp[hour],
           energy: totalEnergy.toFixed(3),
         });
       }
 
       const startEnergy = {
         interval: `${sunrise}`,
-        cloudiness: hourlyClouds[0] || 0,
+        cloudiness: hourlyClouds[sunriseHour] || 0,
         energy: 0,
+        temp: hourlyTemp[sunriseHour] || 0,
       };
 
       const energyForGraph = [startEnergy, ...hourlyEnergy];

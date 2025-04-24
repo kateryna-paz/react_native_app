@@ -90,6 +90,7 @@ export const useHomeScreen = ({ calculateHourlyEnergy, reloadData }) => {
       const { hourlyEnergy: newHourlyEnergy, allEnergy } =
         calculateHourlyEnergy(
           weatherData.hourlyClouds,
+          weatherData.hourlyTemp,
           weatherData.sunrise,
           weatherData.sunset
         );

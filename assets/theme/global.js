@@ -48,6 +48,7 @@ export const MyLightTheme = {
 
     transparent: "transparent",
     darkTransparent: "rgba(0,0,0,0.3)",
+    chartBackground: "rgba(46, 184, 78, 0.05)",
   },
 };
 

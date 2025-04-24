@@ -4,7 +4,7 @@ export default function setLabel(index, data, interval) {
   } else if (index === data.length - 1) {
     return interval.split("-")[1];
   } else {
-    if (index % 2 === 0 && index !== data.length - 2) {
+    if (index % 3 === 0 && index !== data.length - 2) {
       return interval.split("-")[1];
     } else {
       return "";
